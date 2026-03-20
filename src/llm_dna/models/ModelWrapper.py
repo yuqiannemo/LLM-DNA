@@ -504,12 +504,18 @@ class HuggingFaceWrapper(LLMWrapper):
             
         # Ensure all model components are on the same device
         if quantization_config is None:
-            self.logger.info(f"Moving non-quantized model to device: {self.device}")
-            self.model = self.model.to(self.device)
-            # Ensure all parameters are on the same device
-            for param in self.model.parameters():
-                if param.device != torch.device(self.device):
-                    param.data = param.data.to(self.device)
+            # If accelerate already dispatched via device_map, skip .to()
+            if hasattr(self.model, "hf_device_map"):
+                self.logger.info(
+                    f"Model already dispatched via device_map: {self.model.hf_device_map}"
+                )
+            else:
+                self.logger.info(f"Moving non-quantized model to device: {self.device}")
+                self.model = self.model.to(self.device)
+                # Ensure all parameters are on the same device
+                for param in self.model.parameters():
+                    if param.device != torch.device(self.device):
+                        param.data = param.data.to(self.device)
             
             # Verify final device placement
             devices = set()
