@@ -38,6 +38,8 @@ dependencies = [
     "optimum>=1.16.0",
     "mamba-ssm>=1.0.0",
     "compressed-tensors>=0.1.0",
+    "mlx>=0.10.0",
+    "mlx-lm>=0.10.0",
 ]
 
 [project.optional-dependencies]
