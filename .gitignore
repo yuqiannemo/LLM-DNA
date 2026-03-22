@@ -27,7 +27,7 @@ htmlcov/
 !/data/rand/rand_dataset.json
 /models/
 /log/
-/out/
+/out.old/
 /out_no_chat_template/
 /out_phyloLM/
 
