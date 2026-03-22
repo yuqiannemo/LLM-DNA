@@ -129,7 +129,7 @@ def _generate_sentence(rw: RandomWord) -> str:
 
 
 def generate_random_word_samples(
-    num_samples: int = 600,
+    num_samples: int = 100,
     words_per_sample: int = 100,
     seed: int = 42,
 ) -> List[str]:
@@ -205,8 +205,8 @@ def main():
     parser.add_argument(
         "--num-samples",
         type=int,
-        default=600,
-        help="Number of samples to generate (default: 600)"
+        default=100,
+        help="Number of samples to generate (default: 100)"
     )
     parser.add_argument(
         "--words-per-sample",
