@@ -132,16 +132,10 @@ class EmbeddingDNAExtractor(InferenceExtractor):
         if param_count_billions is not None:
             if param_count_billions >= 60:
                 return "very_large"  # 60B+ parameters
-            elif param_count_billions >= 13:
-                return "very_large"  # 13-60B parameters  
-            elif param_count_billions >= 7:
-                return "medium"      # 7-13B parameters
-            elif param_count_billions >= 3:
-                return "small"       # 3-7B parameters
-            elif param_count_billions >= 1:
-                return "tiny"        # 1-3B parameters
+            elif param_count_billions >= 30:
+                return "large"       # 30-60B parameters
             else:
-                return "micro"       # <1B parameters
+                return "standard"    # <30B parameters
         
         # Conservative default for unknown models
         self.logger.warning(f"Could not determine size for model {model.model_name}, using 'medium' batch size")
@@ -159,21 +153,12 @@ class EmbeddingDNAExtractor(InferenceExtractor):
         
         # Base batch sizes by model size
         size_to_batch = {
-            "very_large": 1,    # 60B+ models: process one at a time
-            "large": 2,         # 13-60B models: small batches
-            "medium": 4,        # 7-13B models: moderate batches  
-            "small": 8,         # 3-7B models: larger batches
-            "tiny": 16,         # 1-3B models: large batches
-            "micro": 32         # <1B models: very large batches
+            "very_large": 1,    # 60B+ models
+            "large": 2,         # 30-60B models
+            "standard": 8,      # <30B models
         }
-        
+
         base_batch_size = size_to_batch[model_size]
-        
-        # Further reduce batch size for very large probe sets
-        if num_probes > 100:
-            base_batch_size = max(1, base_batch_size // 2)
-        elif num_probes > 50:
-            base_batch_size = max(1, base_batch_size * 3 // 4)
         
         self.adaptive_batch_size = base_batch_size
         self.logger.info(f"Using adaptive batch size {base_batch_size} for {model_size} model with {num_probes} probes")
@@ -323,10 +308,17 @@ class EmbeddingDNAExtractor(InferenceExtractor):
                 # Ensure attention mask is in the correct dtype to avoid BFloat16/Half issues
                 inputs['attention_mask'] = inputs['attention_mask'].to(dtype=torch.long)
 
+                # Detect model dtype for autocast; fall back to no-cast on CPU
+                model_dtype = next(model.model.parameters()).dtype
+                device_type = str(model.device).split(":")[0]  # "cuda" or "cpu"
+                use_autocast = device_type == "cuda" and model_dtype in (torch.bfloat16, torch.float16)
+
                 with torch.no_grad():
-                    # Perform a single forward pass to get hidden states (no generation)
-                    # Request hidden states explicitly for models that don't return them by default
-                    outputs = model.model(**inputs, output_hidden_states=True)
+                    if use_autocast:
+                        with torch.autocast(device_type=device_type, dtype=model_dtype):
+                            outputs = model.model(**inputs, output_hidden_states=True)
+                    else:
+                        outputs = model.model(**inputs, output_hidden_states=True)
 
                 # Get the hidden states from the last layer - handle different output formats
                 if hasattr(outputs, 'last_hidden_state'):
@@ -336,8 +328,8 @@ class EmbeddingDNAExtractor(InferenceExtractor):
                     last_hidden_state = outputs.hidden_states[-1]
                 else:
                     raise ValueError(f"Model output does not contain accessible hidden states. Available attributes: {list(outputs.__dict__.keys())}")
-                
-                # Convert dtype early to avoid precision issues
+
+                # Convert to float32 for stable downstream computation
                 last_hidden_state = last_hidden_state.to(dtype=torch.float32)
 
                 # Find the index of the last non-padding token for each sequence
@@ -424,15 +416,22 @@ class EmbeddingDNAExtractor(InferenceExtractor):
                 # Ensure attention mask is in the correct dtype to avoid BFloat16/Half issues
                 inputs['attention_mask'] = inputs['attention_mask'].to(dtype=torch.long)
 
+                model_dtype = next(model.model.parameters()).dtype
+                device_type = str(model.device).split(":")[0]
+                use_autocast = device_type == "cuda" and model_dtype in (torch.bfloat16, torch.float16)
+
                 with torch.no_grad():
-                    # Get model outputs with encoder hidden states
-                    outputs = model.model(**inputs, output_hidden_states=True)
-                
+                    if use_autocast:
+                        with torch.autocast(device_type=device_type, dtype=model_dtype):
+                            outputs = model.model(**inputs, output_hidden_states=True)
+                    else:
+                        outputs = model.model(**inputs, output_hidden_states=True)
+
                 # Check if encoder_last_hidden_state exists
                 if not hasattr(outputs, 'encoder_last_hidden_state'):
                     self.logger.warning(f"Model does not provide encoder_last_hidden_state for batch {i}")
                     continue
-                
+
                 # Get the encoder's final hidden states and convert dtype early
                 encoder_hidden_states = outputs.encoder_last_hidden_state.to(dtype=torch.float32)
                 attention_mask = inputs['attention_mask']

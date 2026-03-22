@@ -49,7 +49,7 @@ class DNAExtractionConfig:
     gpu_id: Optional[int] = None
     log_level: str = "INFO"
     random_seed: int = 42
-    skip_chat_template: bool = False
+    skip_chat_template: bool = True
 
 
 @dataclass(slots=True)
