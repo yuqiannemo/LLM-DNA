@@ -227,7 +227,8 @@ def get_dataset_name(dataset_id: str) -> str:
         "mmlu": "mmlu",
         "embed": "embedllm",
         "mix": "mixed",
-        "rand": "rand"
+        "rand": "rand",
+        "rand_chinese": "rand_chinese"
     }
     return dataset_mapping.get(dataset_id, dataset_id)
 

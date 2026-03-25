@@ -108,6 +108,11 @@ class DatasetLoader:
                 name="rand",
                 text_column="text",
                 max_samples=600
+            ),
+            "rand_chinese": DatasetConfig(
+                name="rand_chinese",
+                text_column="text",
+                max_samples=100
             )
         }
     
@@ -166,6 +171,10 @@ class DatasetLoader:
         # Handle special case for random word dataset
         if dataset_name == "rand":
             return self._load_rand_dataset(config, return_raw)
+
+        # Handle special case for Chinese random dataset
+        if dataset_name == "rand_chinese":
+            return self._load_rand_chinese_dataset(config, return_raw)
         
         # Load standard HuggingFace dataset
         try:
@@ -324,7 +333,55 @@ class DatasetLoader:
         if return_raw:
             return texts, texts
         return texts
-    
+
+    def _load_rand_chinese_dataset(
+        self,
+        config: DatasetConfig,
+        return_raw: bool = False
+    ) -> Union[List[str], Tuple[List[str], List[str]]]:
+        """Load classical Chinese random dataset from local JSON file."""
+        rand_dir = self.data_root / "rand"
+        rand_file = rand_dir / "rand_dataset_chinese.json"
+
+        if not rand_file.exists():
+            self.logger.warning(
+                f"Chinese random dataset not found at {rand_file}. "
+                "Attempting to generate it..."
+            )
+            try:
+                from .generate_rand_dataset_chinese import (
+                    generate_random_chinese_samples,
+                    save_dataset,
+                )
+
+                samples = generate_random_chinese_samples(
+                    num_samples=100,
+                    chars_per_sample=100,
+                    seed=42,
+                )
+                save_dataset(samples, rand_file)
+                self.logger.info(f"Generated Chinese random dataset at {rand_file}")
+            except Exception as e:
+                self.logger.error(f"Failed to generate Chinese random dataset: {e}")
+                raise FileNotFoundError(
+                    f"Chinese random dataset not found at {rand_file} and "
+                    f"failed to generate it: {e}"
+                )
+
+        with open(rand_file, "r", encoding="utf-8") as f:
+            texts = json.load(f)
+
+        if config.max_samples and len(texts) > config.max_samples:
+            texts = texts[: config.max_samples]
+
+        self.logger.info(
+            f"Loaded {len(texts)} Chinese random samples from {rand_file}"
+        )
+
+        if return_raw:
+            return texts, texts
+        return texts
+
     def _create_streaming_iterator(
         self,
         dataset: IterableDataset,
