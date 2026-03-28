@@ -642,6 +642,31 @@ def calc_dna(config: DNAExtractionConfig) -> DNAExtractionResult:
         )
         vector = _validate_signature(signature)
 
+        if config.save:
+            cached_responses = _load_cached_responses(response_path, expected_count=len(probe_texts))
+            if cached_responses is None:
+                logging.info(
+                    "Generating and saving responses for '%s' to %s to align single-model caching with batch mode.",
+                    config.model_name,
+                    response_path,
+                )
+                responses = _generate_responses_for_model(
+                    model_name=config.model_name,
+                    config=config,
+                    model_meta=model_meta,
+                    probe_texts=probe_texts,
+                    device=resolved_device,
+                    resolved_token=resolved_token,
+                    incremental_save_path=response_path,
+                )
+                _save_response_cache(
+                    path=response_path,
+                    model_name=config.model_name,
+                    dataset=config.dataset,
+                    prompts=probe_texts,
+                    responses=responses,
+                )
+
     elapsed_seconds = time.time() - start_time
 
     output_path: Optional[Path] = None
