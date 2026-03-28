@@ -75,16 +75,15 @@ class ModelLoader:
             "openrouter:",
             "anthropic/claude-",
             "deepseek/",
-            "openai/gpt-",
+            "openai/gpt-3",
+            "openai/gpt-4",
             "google/gemini-",
-            "z-ai/",
             "x-ai/grok-",
             "cohere/command",
             "perplexity/",
         ]
-        huggingface_prefixes_openai = "openai/gpt-oss"
 
-        if any(model_lower.startswith(prefix) for prefix in openrouter_prefixes) and not model_lower.startswith(huggingface_prefixes_openai):
+        if any(model_lower.startswith(prefix) for prefix in openrouter_prefixes):
             return "openrouter"
 
         # Check for Google Gemini model names
