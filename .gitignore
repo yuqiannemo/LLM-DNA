@@ -25,6 +25,7 @@ htmlcov/
 !/data/rand/
 /data/rand/*
 !/data/rand/rand_dataset.json
+!/data/rand/rand_dataset_chinese.json
 /models/
 /log/
 /out.old/
