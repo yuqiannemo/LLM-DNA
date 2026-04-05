@@ -3,7 +3,6 @@ Model loading utilities for different LLM types.
 """
 
 import os
-import json
 from typing import Optional, Dict, Any, Union
 from pathlib import Path
 import logging
@@ -15,34 +14,10 @@ from .ModelWrapper import (LLMWrapper, HuggingFaceWrapper, OpenAIWrapper, OpenRo
 
 class ModelLoader:
     """Factory class for loading different types of LLMs."""
-    _openrouter_model_ids: Optional[set[str]] = None
     
     def __init__(self, config_dict: Optional[Dict[str, Any]] = None):
         self.logger = logging.getLogger(__name__)
         self.config_dict = config_dict or {}
-
-    @classmethod
-    def _load_openrouter_model_ids(cls) -> set[str]:
-        if cls._openrouter_model_ids is not None:
-            return cls._openrouter_model_ids
-
-        model_ids: set[str] = set()
-        config_path = Path(__file__).resolve().parents[3] / "configs" / "openrouter_llm_list.jsonl"
-        try:
-            with config_path.open("r", encoding="utf-8") as handle:
-                for line in handle:
-                    line = line.strip()
-                    if not line:
-                        continue
-                    record = json.loads(line)
-                    model_id = str(record.get("model_id", "")).strip().lower()
-                    if model_id:
-                        model_ids.add(model_id)
-        except Exception:
-            model_ids = set()
-
-        cls._openrouter_model_ids = model_ids
-        return model_ids
         
     def load_model(
         self,
@@ -103,15 +78,12 @@ class ModelLoader:
             "openai/gpt-3",
             "openai/gpt-4",
             "google/gemini-",
+            "z-ai/",
             "x-ai/grok-",
             "cohere/command",
             "perplexity/",
         ]
-
         if any(model_lower.startswith(prefix) for prefix in openrouter_prefixes):
-            return "openrouter"
-
-        if model_lower in self._load_openrouter_model_ids():
             return "openrouter"
 
         # Check for Google Gemini model names

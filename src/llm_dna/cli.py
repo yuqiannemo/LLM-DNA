@@ -185,8 +185,6 @@ def main(argv: Optional[Iterable[str]] = None) -> int:
     """Main CLI entrypoint for DNA extraction."""
     from .api import DNAExtractionConfig, calc_dna, calc_dna_parallel
 
-    project_root = Path(__file__).resolve().parents[2]
-    load_dotenv(project_root / ".env", override=False)
     load_dotenv(override=False)
 
     args = parse_arguments(argv)
