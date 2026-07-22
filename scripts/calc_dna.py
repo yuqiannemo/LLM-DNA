@@ -69,9 +69,49 @@ def main():
         help="Continue processing remaining models if one fails (batch mode only)"
     )
     parser.add_argument(
+        "--try-vllm",
+        action="store_true",
+        help="Try vLLM first for decoder-only HuggingFace models"
+    )
+    parser.add_argument(
+        "--temperature",
+        type=float,
+        default=0.0,
+        help="Generation temperature. Defaults to 0.0 to preserve deterministic historical runs.",
+    )
+    parser.add_argument(
+        "--top-p",
+        type=float,
+        default=1.0,
+        help="Top-p nucleus sampling value used when sampling is enabled.",
+    )
+    parser.add_argument(
+        "--do-sample",
+        action="store_true",
+        default=False,
+        help="Enable stochastic sampling during generation.",
+    )
+    parser.add_argument(
+        "--no-do-sample",
+        dest="do_sample",
+        action="store_false",
+        help="Disable stochastic sampling during generation.",
+    )
+    parser.add_argument(
         "--no-save",
         action="store_true",
         help="Don't save results to disk"
+    )
+    parser.add_argument(
+        "--output-suffix",
+        type=str,
+        default="",
+        help="Suffix appended to the safe model output directory name, e.g. _2.",
+    )
+    parser.add_argument(
+        "--ignore-response-cache",
+        action="store_true",
+        help="Regenerate responses even if responses.json already exists; new responses are still saved.",
     )
     args = parser.parse_args()
 
@@ -94,8 +134,14 @@ def main():
         data_root=data_root,
         metadata_file=metadata_file if metadata_file.exists() else None,
         output_dir=output_dir,
+        output_suffix=args.output_suffix,
         save=not args.no_save,
         trust_remote_code=True,
+        try_vllm=args.try_vllm,
+        temperature=args.temperature,
+        do_sample=args.do_sample,
+        top_p=args.top_p,
+        use_response_cache=not args.ignore_response_cache,
     )
 
     # Batch mode: process multiple models from file
@@ -140,4 +186,3 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
-
