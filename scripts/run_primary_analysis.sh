@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 # Analyze the completed primary sweep.  Repeats 1-2 are training/gallery data;
-# repeats 3-4 are held-out queries.  The command refuses cohorts below 250.
+# repeats 3-4 are held-out queries. The command refuses cohorts below 80.
 
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-DATA_DIR="${DATA_DIR:-out/primary_robustness_300/rand_chinese}"
-ANALYSIS_ROOT="${ANALYSIS_ROOT:-out/primary_robustness_300_analysis}"
-MINIMUM_MODELS="${MINIMUM_MODELS:-250}"
+DATA_DIR="${DATA_DIR:-out/primary_robustness_100/rand_chinese}"
+ANALYSIS_ROOT="${ANALYSIS_ROOT:-out/primary_robustness_100_analysis}"
+MINIMUM_MODELS="${MINIMUM_MODELS:-80}"
 PYTHON_BIN="${PYTHON_BIN:-$ROOT/venv/bin/python}"
 if [[ ! -x "$PYTHON_BIN" ]]; then
   PYTHON_BIN="$(command -v python3)"

@@ -28,7 +28,7 @@
 \title{Primary LLM-DNA Robustness Experiment\\
 \large Prospective Experimental Protocol and Report Template}
 \author{}
-\date{July 21, 2026}
+\date{July 24, 2026}
 
 \begin{document}
 \maketitle
@@ -39,8 +39,8 @@ robustness experiment before generation and evaluation are complete. The study
 will measure how temperature and top-$p$ affect exact-model identification,
 whether a classifier can mitigate the resulting accuracy loss, and whether a
 multi-sample distributional representation improves robustness under a matched
-generation budget. The primary cohort contains 300 models selected without
-using evaluation performance. The experiment contains one deterministic
+generation budget. The revised primary cohort contains 100 models selected
+without using evaluation performance. The experiment contains one deterministic
 condition and a complete $4\times3$ stochastic decoding grid, with four
 independent generation repeats per condition. The principal deployment setting
 assumes that temperature and top-$p$ are hidden at inference time and only an
@@ -62,6 +62,12 @@ small-scale demonstrations from existing artifacts; they must not be
 interpreted as primary findings.
 }}
 \end{center}
+
+Before generation began, a resource-feasibility review on July 24, 2026
+reduced the planned cohort from 300 to 100 models. The decoding grid, four
+independent repeats, train/test separation, prompts, and analysis plan remain
+unchanged. Accordingly, exact identification is now a 100-way closed-set task,
+and conclusions will be limited to the revised fixed cohort.
 
 This experiment replaces the 77-model interim analysis as the primary
 robustness study. The earlier analysis remains a legacy diagnostic because it
@@ -109,25 +115,30 @@ different tasks.
 
 \subsection{Selection rule}
 
-The planned cohort contains 300 Hugging Face models. It was selected from 470
+The planned cohort contains 100 Hugging Face models. It was selected from 470
 eligible models with valid unsuffixed reference DNA artifacts and recorded
 parameter counts between 0.3 and 7.5 billion. Selection used seeded round-robin
 sampling over architecture $\times$ logarithmic parameter-size strata. It did
 not use retrieval accuracy, SVM accuracy, response quality, or any other test
-outcome. Before launching the primary grid, three models that repeatedly
-returned empty responses in the pilot control run were replaced with
-similar-size models whose cached baseline runs each contained 100 non-empty
-responses. These reliability replacements were documented in advance and did
-not use evaluation accuracy.
+outcome. Before launching the primary grid, one selected model that repeatedly
+returned empty responses in the pilot control run was replaced with a
+similar-size model whose cached baseline run contained 100 non-empty responses.
+This reliability replacement was documented in advance and did not use
+evaluation accuracy.
 
 The fixed artifacts are:
 
 \begin{itemize}
-  \item cohort: \path{configs/rand_chinese_stratified_300.jsonl};
-  \item audit: \path{configs/rand_chinese_stratified_300_audit.json};
+  \item cohort: \path{configs/rand_chinese_stratified_100.jsonl};
+  \item cohort audit: \path{configs/rand_chinese_stratified_100_audit.json};
+  \item hardware shards:
+        \path{configs/rand_chinese_stratified_100_rtx3090.jsonl} and
+        \path{configs/rand_chinese_stratified_100_a100.jsonl};
+  \item shard audit:
+        \path{configs/rand_chinese_stratified_100_shards_audit.json};
   \item selection seed: 42; and
   \item cohort SHA-256:
-        \texttt{4bc0dcebcd0e4d0e1240687fe981ac177a4306541b4813a943396b659cfe2661}.
+        \texttt{19b7c7b554af4e98edeb3ab279f52ccae66a9bddbff81c0c15f2fb464e895e6e}.
 \end{itemize}
 
 The audit file records the eligible population, selection method, selected
@@ -139,10 +150,10 @@ the affected run is launched.
 
 \subsection{Completion requirement}
 
-The intended final analysis uses all 300 models. The automated primary analysis
-will refuse to run if fewer than 250 models are common to all required training
+The intended final analysis uses all 100 models. The automated primary analysis
+will refuse to run if fewer than 80 models are common to all required training
 and test runs. Missing models should first be backfilled. If the final common
-cohort remains below 300, the report will provide success rates and failure
+cohort remains below 100, the report will provide success rates and failure
 reasons by decoding cell and compare retained and excluded models by size and
 architecture.
 
@@ -184,8 +195,8 @@ For stochastic decoding, the complete grid is
 This gives 13 decoding conditions in total. Four independent generation
 repeats are planned for every condition, giving 52 run cells and
 \[
-  300\ \text{models}\times13\ \text{conditions}\times4\ \text{repeats}
-  =15{,}600
+  100\ \text{models}\times13\ \text{conditions}\times4\ \text{repeats}
+  =5{,}200
 \]
 model-level extraction tasks before retries.
 
@@ -482,7 +493,7 @@ repeat 2 for testing. Six complete stochastic cells were available:
 The $T=0.5$ and $T=0.7$ cells were excluded because they did not have a
 sufficiently complete independent-repeat split. These demonstrations use
 convenience cohorts determined by artifact availability, not the fixed
-300-model primary cohort. They are therefore pipeline checks and exploratory
+100-model primary cohort. They are therefore pipeline checks and exploratory
 effect estimates only.
 
 \subsection{Executive summary}
@@ -496,7 +507,7 @@ sensitivity check. Across the six complete cells, the pooled linear SVM had the
 highest equal-cell Top-1 (0.722), followed by RBF SVM (0.688) and cosine
 retrieval (0.621). The hardest observed cell was $(T,p)=(0.3,1.0)$. These are
 exploratory results from availability-selected cohorts and must not be read as
-the outcome of the 300-model primary experiment.
+the outcome of the 100-model primary experiment.
 }}
 
 \medskip
@@ -757,7 +768,7 @@ The demonstration supports the following limited conclusions:
         fixed in paired comparisons.
 \end{itemize}
 
-Before any primary claim is made, the study still requires the fixed 300-model
+Before any primary claim is made, the study still requires the fixed 100-model
 cohort, complete repeats 1--4 for all 13 conditions, the preregistered
 repeat-1/2 versus repeat-3/4 split, $K=4$ and $K=8$ response samples, sufficient
 direct and indirect model-tree pairs, and the planned encoder/projection
@@ -780,17 +791,21 @@ python scripts/plot_small_scale_section_6_11_demo.py
 \section{Execution and resource plan}
 
 The generation launcher is
-\path{scripts/run_primary_robustness_experiment.sh}. It uses the 300-model
+\path{scripts/run_primary_robustness_experiment.sh}. It uses the 100-model
 cohort, four repeats, the 13-condition grid, isolated outputs under
-\path{out/primary_robustness_300}, and isolated logs. The scheduler dynamically
-uses visible GPUs up to ten concurrent workers unless an explicit disjoint GPU
-list is supplied.
+\path{out/primary_robustness_100}, and isolated logs. The hardware-shard wrapper
+\path{scripts/run_primary_robustness_100_shard.sh} assigns the 23 largest
+models to the two A100 GPUs and the remaining 77 models to the RTX 3090 fleet.
+Both processes write model artifacts beneath the same experiment directory,
+but use distinct run names, logs, status journals, and global-state files to
+avoid concurrent-writer conflicts. The RTX 3090 scheduler uses up to four visible
+GPUs; the A100 scheduler uses up to two.
 
 The current 100-model $T=0.5$ top-$p$ control experiment may continue as a
-supplementary study. If both studies run simultaneously, they must use disjoint
-GPU sets to avoid resource contention. Sequential execution is preferred
-because the processes otherwise share Hugging Face model caches and cache
-cleanup policies.
+supplementary study. Its availability-selected cohort and existing artifacts
+are not substituted into the revised primary cohort. The two primary shards
+should be launched only after that control run finishes. If they share a model
+cache, cache cleanup must not evict a model still required by the other shard.
 
 Transient failures are retried and recorded. Progress reports include planned,
 successful, failed, and missing models plus failure-status counts. Missing
@@ -828,11 +843,11 @@ retained as a clearly labelled legacy reference-sensitivity analysis.
 \toprule
 Condition & Planned & Successful & Failed & Common cohort \\
 \midrule
-$T=0$ & 300 & \todoresult & \todoresult & \todoresult \\
-$T=0.2$, all $p$ & 900 & \todoresult & \todoresult & \todoresult \\
-$T=0.3$, all $p$ & 900 & \todoresult & \todoresult & \todoresult \\
-$T=0.5$, all $p$ & 900 & \todoresult & \todoresult & \todoresult \\
-$T=0.7$, all $p$ & 900 & \todoresult & \todoresult & \todoresult \\
+$T=0$ & 100 & \todoresult & \todoresult & \todoresult \\
+$T=0.2$, all $p$ & 300 & \todoresult & \todoresult & \todoresult \\
+$T=0.3$, all $p$ & 300 & \todoresult & \todoresult & \todoresult \\
+$T=0.5$, all $p$ & 300 & \todoresult & \todoresult & \todoresult \\
+$T=0.7$, all $p$ & 300 & \todoresult & \todoresult & \todoresult \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -942,15 +957,24 @@ unknown-setting gallery.
 Build or verify the fixed cohort:
 
 \begin{lstlisting}[language=bash]
-python3 scripts/build_experiment_cohort.py --target 300
+python3 scripts/build_experiment_cohort.py --target 100 \
+  --output configs/rand_chinese_stratified_100.jsonl \
+  --audit-output configs/rand_chinese_stratified_100_audit.json
+python3 scripts/build_primary_robustness_100_shards.py
 \end{lstlisting}
 
-Launch generation after the existing control run finishes, or assign a
-disjoint GPU set:
+After the existing control run finishes, launch the two hardware shards from
+separate terminals. Each command dynamically uses the visible GPUs up to its
+stated worker cap:
 
 \begin{lstlisting}[language=bash]
-nohup bash scripts/run_primary_robustness_experiment.sh \
-  > logs/primary_robustness_master.log 2>&1 &
+mkdir -p logs && nohup env MAX_CONCURRENT_GPUS=4 \
+  bash scripts/run_primary_robustness_100_shard.sh rtx3090 \
+  > logs/primary_robustness_100_rtx3090_master.log 2>&1 &
+
+mkdir -p logs && nohup env MAX_CONCURRENT_GPUS=2 \
+  bash scripts/run_primary_robustness_100_shard.sh a100 \
+  > logs/primary_robustness_100_a100_master.log 2>&1 &
 \end{lstlisting}
 
 Run the preregistered exact-model and tree-aware analyses after all four repeats
@@ -961,7 +985,7 @@ bash scripts/run_primary_analysis.sh
 \end{lstlisting}
 
 The primary analysis outputs are written beneath
-\path{out/primary_robustness_300_analysis}. The exact-model evaluator produces
+\path{out/primary_robustness_100_analysis}. The exact-model evaluator produces
 per-setting metrics, per-query predictions, bounded-deployment tables, cohort
 metadata, and JSON summaries.
 
@@ -977,7 +1001,12 @@ File & Purpose \\
 \midrule
 \endhead
 \path{scripts/run_primary_robustness_experiment.sh}
-  & Launch the 300-model, 13-condition, four-repeat extraction sweep. \\
+  & Launch the 100-model, 13-condition, four-repeat extraction sweep. \\
+\path{scripts/run_primary_robustness_100_shard.sh}
+  & Run the collision-safe RTX 3090 or A100 hardware shard. \\
+\path{scripts/build_primary_robustness_100_shards.py}
+  & Assign 77 models to RTX 3090 workers and the 23 largest models to A100
+    workers; record shard membership and hashes. \\
 \path{scripts/run_primary_analysis.sh}
   & Construct the fixed train/test repeat split and run primary analyses. \\
 \path{scripts/evaluate_exact_dna_classification.py}
