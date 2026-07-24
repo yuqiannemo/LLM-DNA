@@ -1,0 +1,629 @@
+{
+  "selection_uses_performance": false,
+  "selection_method": "seeded round-robin over architecture x logarithmic parameter-size strata, followed by documented reliability replacements that do not use evaluation accuracy",
+  "seed": 42,
+  "target": 100,
+  "eligible_count": 470,
+  "selected_count": 100,
+  "minimum_billions": 0.3,
+  "maximum_billions": 7.5,
+  "output_sha256": "19b7c7b554af4e98edeb3ab279f52ccae66a9bddbff81c0c15f2fb464e895e6e",
+  "post_selection_replacements": [
+    {
+      "removed_model": "sarvamai/sarvam-30b",
+      "removed_size_billions": 4.9,
+      "replacement_model": "tiiuae/Falcon3-10B-Base",
+      "replacement_size_billions": 4.93,
+      "reason": "repeated_failed_empty_response",
+      "validation": "cached baseline contains 100 non-empty responses"
+    }
+  ],
+  "selected_models": [
+    "FreedomIntelligence/openPangu-Embedded-1B",
+    "swiss-ai/Apertus-8B-2509",
+    "arcee-ai/AFM-4.5B",
+    "Salesforce/codegen-350M-multi",
+    "Salesforce/codegen-2B-mono",
+    "deepseek-ai/DeepSeek-Coder-V2-Lite-Base",
+    "ai-sage/GigaChat3-10B-A1.8B-bf16",
+    "euclaise/falcon_1b_stage2",
+    "tiiuae/Falcon-H1-0.5B-Base",
+    "tiiuae/Falcon-H1-1.5B-Base",
+    "tiiuae/Falcon-H1-3B-Base",
+    "tiiuae/Falcon-H1R-7B",
+    "TechxGenus/gemma-1.1-2b-it-GPTQ",
+    "unsloth/gemma-7b-it",
+    "yam-peleg/Hebrew-Gemma-11B-V2",
+    "vandijklab/C2S-Scale-Gemma-2-2B",
+    "Unbabel/Tower-Plus-9B",
+    "nvidia/Nemotron-Content-Safety-Reasoning-4B",
+    "unsloth/gemma-3-1b-it",
+    "gghfez/gemma-3-4b-novision",
+    "robowaifudev/megatron-gpt2-345m",
+    "rinna/japanese-gpt-1b",
+    "EleutherAI/pythia-410m-seed1",
+    "cleanrl/EleutherAI_pythia-1b-deduped__sft__tldr",
+    "stabilityai/stablelm-tuned-alpha-3b",
+    "EleutherAI/polyglot-ko-5.8b",
+    "squ11z1/gpt-oss-nano",
+    "PygmalionAI/pygmalion-6b",
+    "ibm-granite/granite-guardian-3.1-2b",
+    "ibm-granite/granite-3.1-3b-a800m-base",
+    "ibm-granite/granite-4.0-h-350m-base",
+    "ibm-granite/granite-4.0-h-tiny-base",
+    "ibm-granite/granite-4.0-micro-base",
+    "tencent/Hunyuan-7B-Instruct",
+    "ai21labs/AI21-Jamba2-3B",
+    "jetmoe/jetmoe-8b",
+    "unsloth/LFM2.5-1.2B-Instruct",
+    "svc-nai-cci/nanollama-public",
+    "TheBloke/TinyLlama-1.1B-Chat-v1.0-AWQ",
+    "tiiuae/Falcon3-7B-Base",
+    "yaojialzc/Gigi-Llama3-8B-Chinese-zh",
+    "state-spaces/mamba-370m-hf",
+    "state-spaces/mamba-790m-hf",
+    "state-spaces/mamba-1.4b-hf",
+    "state-spaces/mamba-2.8b-hf",
+    "openbmb/MiniCPM4.1-8B-GPTQ",
+    "mii-llm/minerva-chat-v0.1-alpha-sft",
+    "Artples/L-MChat-7b",
+    "AIChenKai/TinyLlama-1.1B-Chat-v1.0-x2-MoE",
+    "hugging-quants/Mixtral-8x7B-Instruct-v0.1-AWQ-INT4",
+    "nvidia/Minitron-4B-Base",
+    "unsloth/Nemotron-3-Nano-30B-A3B",
+    "allenai/OLMo-7B-0724-Instruct-hf",
+    "allenai/OLMo-2-0425-1B-RLVR1",
+    "allenai/Olmo-3-7B-RL-Zero-Math",
+    "allenai/Olmo-Hybrid-Instruct-SFT-7B",
+    "yec019/fbopt-350m-8bit",
+    "facebook/galactica-1.3b",
+    "facebook/galactica-6.7b",
+    "bharatgenai/Param2-17B-A2.4B-Thinking",
+    "Artples/L-MChat-Small",
+    "ReDiX/Artemide-3.5",
+    "unsloth/Phi-4-mini-instruct-unsloth-bnb-4bit",
+    "TIGER-Lab/VLM2Vec-Full",
+    "TheBloke/Qwen-7B-Chat-AWQ",
+    "Papaperez/Qwen2.5-0.5B-Instruct-Gensyn-Swarm-lanky_reptilian_opossum",
+    "unsloth/Qwen2.5-Coder-1.5B-bnb-4bit",
+    "unsloth/Qwen2.5-3B-unsloth-bnb-4bit",
+    "IQuestLab/Fleming-R1-7B",
+    "unsloth/Qwen3-0.6B-Base-unsloth-bnb-4bit",
+    "dicta-il/DictaLM-3.0-1.7B-Base",
+    "unsloth/Qwen3-4B-unsloth-bnb-4bit",
+    "Aratako/Qwen3-30B-A3B-NSFW-JP",
+    "vincentzed-hf/Qwen3-Coder-Next-NVFP4",
+    "google/recurrentgemma-2b-it",
+    "tiiuae/Falcon3-10B-Base",
+    "stabilityai/stablelm-2-zephyr-1_6b",
+    "stabilityai/stablelm-3b-4e1t",
+    "openbmb/MiniCPM-MoE-8x2B",
+    "Zyphra/Zamba2-1.2B-instruct",
+    "swiss-ai/Apertus-8B-Instruct-2509",
+    "tiiuae/falcon-rw-1b",
+    "tiiuae/Falcon-H1-7B-Instruct",
+    "unsloth/gemma-2b-bnb-4bit",
+    "SeaLLMs/SeaLLM-7B-v2.5",
+    "unsloth/gemma-2-2b-it",
+    "ytu-ce-cosmos/Turkish-Gemma-9b-T1",
+    "unsloth/gemma-3-1b-it-bnb-4bit",
+    "hyper-accel/ci-random-gpt2-350m",
+    "EleutherAI/pythia-410m-seed3",
+    "rinna/japanese-gpt-neox-3.6b-instruction-sft-v2",
+    "EleutherAI/deep-ignorance-pretraining-stage-unfiltered",
+    "unsloth/gpt-oss-20b-bnb-4bit",
+    "ibm-granite/granite-guardian-3.0-2b",
+    "ibm-granite/granite-3.0-3b-a800m-instruct",
+    "unsloth/granite-4.0-h-tiny",
+    "ibm-granite/granite-4.0-h-micro-base",
+    "LiquidAI/LFM2.5-1.2B-JP",
+    "hyper-accel/ci-random-llama2-7b",
+    "unsloth/tinyllama-chat"
+  ],
+  "selected_metadata": {
+    "FreedomIntelligence/openPangu-Embedded-1B": {
+      "parameter_count_billions": 0.97,
+      "architecture": "PanguEmbedded",
+      "reference_path": "out/rand_chinese/FreedomIntelligence_openPangu-Embedded-1B/FreedomIntelligence_openPangu-Embedded-1B_dna.json"
+    },
+    "swiss-ai/Apertus-8B-2509": {
+      "parameter_count_billions": 6.98,
+      "architecture": "apertus",
+      "reference_path": "out/rand_chinese/swiss-ai_Apertus-8B-2509/swiss-ai_Apertus-8B-2509_dna.json"
+    },
+    "arcee-ai/AFM-4.5B": {
+      "parameter_count_billions": 3.16,
+      "architecture": "arcee",
+      "reference_path": "out/rand_chinese/arcee-ai_AFM-4.5B/arcee-ai_AFM-4.5B_dna.json"
+    },
+    "Salesforce/codegen-350M-multi": {
+      "parameter_count_billions": 0.35,
+      "architecture": "codegen",
+      "reference_path": "out/rand_chinese/Salesforce_codegen-350M-multi/Salesforce_codegen-350M-multi_dna.json"
+    },
+    "Salesforce/codegen-2B-mono": {
+      "parameter_count_billions": 2.0,
+      "architecture": "codegen",
+      "reference_path": "out/rand_chinese/Salesforce_codegen-2B-mono/Salesforce_codegen-2B-mono_dna.json"
+    },
+    "deepseek-ai/DeepSeek-Coder-V2-Lite-Base": {
+      "parameter_count_billions": 1.57,
+      "architecture": "deepseek_v2",
+      "reference_path": "out/rand_chinese/deepseek-ai_DeepSeek-Coder-V2-Lite-Base/deepseek-ai_DeepSeek-Coder-V2-Lite-Base_dna.json"
+    },
+    "ai-sage/GigaChat3-10B-A1.8B-bf16": {
+      "parameter_count_billions": 0.93,
+      "architecture": "deepseek_v3",
+      "reference_path": "out/rand_chinese/ai-sage_GigaChat3-10B-A1.8B-bf16/ai-sage_GigaChat3-10B-A1.8B-bf16_dna.json"
+    },
+    "euclaise/falcon_1b_stage2": {
+      "parameter_count_billions": 1.31,
+      "architecture": "falcon",
+      "reference_path": "out/rand_chinese/euclaise_falcon_1b_stage2/euclaise_falcon_1b_stage2_dna.json"
+    },
+    "tiiuae/Falcon-H1-0.5B-Base": {
+      "parameter_count_billions": 0.49,
+      "architecture": "falcon_h1",
+      "reference_path": "out/rand_chinese/tiiuae_Falcon-H1-0.5B-Base/tiiuae_Falcon-H1-0.5B-Base_dna.json"
+    },
+    "tiiuae/Falcon-H1-1.5B-Base": {
+      "parameter_count_billions": 1.34,
+      "architecture": "falcon_h1",
+      "reference_path": "out/rand_chinese/tiiuae_Falcon-H1-1.5B-Base/tiiuae_Falcon-H1-1.5B-Base_dna.json"
+    },
+    "tiiuae/Falcon-H1-3B-Base": {
+      "parameter_count_billions": 2.68,
+      "architecture": "falcon_h1",
+      "reference_path": "out/rand_chinese/tiiuae_Falcon-H1-3B-Base/tiiuae_Falcon-H1-3B-Base_dna.json"
+    },
+    "tiiuae/Falcon-H1R-7B": {
+      "parameter_count_billions": 5.38,
+      "architecture": "falcon_h1",
+      "reference_path": "out/rand_chinese/tiiuae_Falcon-H1R-7B/tiiuae_Falcon-H1R-7B_dna.json"
+    },
+    "TechxGenus/gemma-1.1-2b-it-GPTQ": {
+      "parameter_count_billions": 1.43,
+      "architecture": "gemma",
+      "reference_path": "out/rand_chinese/TechxGenus_gemma-1.1-2b-it-GPTQ/TechxGenus_gemma-1.1-2b-it-GPTQ_dna.json"
+    },
+    "unsloth/gemma-7b-it": {
+      "parameter_count_billions": 3.96,
+      "architecture": "gemma",
+      "reference_path": "out/rand_chinese/unsloth_gemma-7b-it/unsloth_gemma-7b-it_dna.json"
+    },
+    "yam-peleg/Hebrew-Gemma-11B-V2": {
+      "parameter_count_billions": 4.75,
+      "architecture": "gemma",
+      "reference_path": "out/rand_chinese/yam-peleg_Hebrew-Gemma-11B-V2/yam-peleg_Hebrew-Gemma-11B-V2_dna.json"
+    },
+    "vandijklab/C2S-Scale-Gemma-2-2B": {
+      "parameter_count_billions": 2.25,
+      "architecture": "gemma2",
+      "reference_path": "out/rand_chinese/vandijklab_C2S-Scale-Gemma-2-2B/vandijklab_C2S-Scale-Gemma-2-2B_dna.json"
+    },
+    "Unbabel/Tower-Plus-9B": {
+      "parameter_count_billions": 7.39,
+      "architecture": "gemma2",
+      "reference_path": "out/rand_chinese/Unbabel_Tower-Plus-9B/Unbabel_Tower-Plus-9B_dna.json"
+    },
+    "nvidia/Nemotron-Content-Safety-Reasoning-4B": {
+      "parameter_count_billions": 4.0,
+      "architecture": "gemma3",
+      "reference_path": "out/rand_chinese/nvidia_Nemotron-Content-Safety-Reasoning-4B/nvidia_Nemotron-Content-Safety-Reasoning-4B_dna.json"
+    },
+    "unsloth/gemma-3-1b-it": {
+      "parameter_count_billions": 0.72,
+      "architecture": "gemma3_text",
+      "reference_path": "out/rand_chinese/unsloth_gemma-3-1b-it/unsloth_gemma-3-1b-it_dna.json"
+    },
+    "gghfez/gemma-3-4b-novision": {
+      "parameter_count_billions": 3.35,
+      "architecture": "gemma3_text",
+      "reference_path": "out/rand_chinese/gghfez_gemma-3-4b-novision/gghfez_gemma-3-4b-novision_dna.json"
+    },
+    "robowaifudev/megatron-gpt2-345m": {
+      "parameter_count_billions": 0.345,
+      "architecture": "gpt2",
+      "reference_path": "out/rand_chinese/robowaifudev_megatron-gpt2-345m/robowaifudev_megatron-gpt2-345m_dna.json"
+    },
+    "rinna/japanese-gpt-1b": {
+      "parameter_count_billions": 1.0,
+      "architecture": "gpt2",
+      "reference_path": "out/rand_chinese/rinna_japanese-gpt-1b/rinna_japanese-gpt-1b_dna.json"
+    },
+    "EleutherAI/pythia-410m-seed1": {
+      "parameter_count_billions": 0.35,
+      "architecture": "gpt_neox",
+      "reference_path": "out/rand_chinese/EleutherAI_pythia-410m-seed1/EleutherAI_pythia-410m-seed1_dna.json"
+    },
+    "cleanrl/EleutherAI_pythia-1b-deduped__sft__tldr": {
+      "parameter_count_billions": 0.91,
+      "architecture": "gpt_neox",
+      "reference_path": "out/rand_chinese/cleanrl_EleutherAI_pythia-1b-deduped__sft__tldr/cleanrl_EleutherAI_pythia-1b-deduped__sft__tldr_dna.json"
+    },
+    "stabilityai/stablelm-tuned-alpha-3b": {
+      "parameter_count_billions": 3.43,
+      "architecture": "gpt_neox",
+      "reference_path": "out/rand_chinese/stabilityai_stablelm-tuned-alpha-3b/stabilityai_stablelm-tuned-alpha-3b_dna.json"
+    },
+    "EleutherAI/polyglot-ko-5.8b": {
+      "parameter_count_billions": 5.76,
+      "architecture": "gpt_neox",
+      "reference_path": "out/rand_chinese/EleutherAI_polyglot-ko-5.8b/EleutherAI_polyglot-ko-5.8b_dna.json"
+    },
+    "squ11z1/gpt-oss-nano": {
+      "parameter_count_billions": 2.97,
+      "architecture": "gpt_oss",
+      "reference_path": "out/rand_chinese/squ11z1_gpt-oss-nano/squ11z1_gpt-oss-nano_dna.json"
+    },
+    "PygmalionAI/pygmalion-6b": {
+      "parameter_count_billions": 6.0,
+      "architecture": "gptj",
+      "reference_path": "out/rand_chinese/PygmalionAI_pygmalion-6b/PygmalionAI_pygmalion-6b_dna.json"
+    },
+    "ibm-granite/granite-guardian-3.1-2b": {
+      "parameter_count_billions": 2.11,
+      "architecture": "granite",
+      "reference_path": "out/rand_chinese/ibm-granite_granite-guardian-3.1-2b/ibm-granite_granite-guardian-3.1-2b_dna.json"
+    },
+    "ibm-granite/granite-3.1-3b-a800m-base": {
+      "parameter_count_billions": 0.98,
+      "architecture": "granitemoe",
+      "reference_path": "out/rand_chinese/ibm-granite_granite-3.1-3b-a800m-base/ibm-granite_granite-3.1-3b-a800m-base_dna.json"
+    },
+    "ibm-granite/granite-4.0-h-350m-base": {
+      "parameter_count_billions": 0.3,
+      "architecture": "granitemoehybrid",
+      "reference_path": "out/rand_chinese/ibm-granite_granite-4.0-h-350m-base/ibm-granite_granite-4.0-h-350m-base_dna.json"
+    },
+    "ibm-granite/granite-4.0-h-tiny-base": {
+      "parameter_count_billions": 1.29,
+      "architecture": "granitemoehybrid",
+      "reference_path": "out/rand_chinese/ibm-granite_granite-4.0-h-tiny-base/ibm-granite_granite-4.0-h-tiny-base_dna.json"
+    },
+    "ibm-granite/granite-4.0-micro-base": {
+      "parameter_count_billions": 3.4,
+      "architecture": "granitemoehybrid",
+      "reference_path": "out/rand_chinese/ibm-granite_granite-4.0-micro-base/ibm-granite_granite-4.0-micro-base_dna.json"
+    },
+    "tencent/Hunyuan-7B-Instruct": {
+      "parameter_count_billions": 6.97,
+      "architecture": "hunyuan_v1_dense",
+      "reference_path": "out/rand_chinese/tencent_Hunyuan-7B-Instruct/tencent_Hunyuan-7B-Instruct_dna.json"
+    },
+    "ai21labs/AI21-Jamba2-3B": {
+      "parameter_count_billions": 2.37,
+      "architecture": "jamba",
+      "reference_path": "out/rand_chinese/ai21labs_AI21-Jamba2-3B/ai21labs_AI21-Jamba2-3B_dna.json"
+    },
+    "jetmoe/jetmoe-8b": {
+      "parameter_count_billions": 1.27,
+      "architecture": "jetmoe",
+      "reference_path": "out/rand_chinese/jetmoe_jetmoe-8b/jetmoe_jetmoe-8b_dna.json"
+    },
+    "unsloth/LFM2.5-1.2B-Instruct": {
+      "parameter_count_billions": 0.94,
+      "architecture": "lfm2",
+      "reference_path": "out/rand_chinese/unsloth_LFM2.5-1.2B-Instruct/unsloth_LFM2.5-1.2B-Instruct_dna.json"
+    },
+    "svc-nai-cci/nanollama-public": {
+      "parameter_count_billions": 0.94,
+      "architecture": "llama",
+      "reference_path": "out/rand_chinese/svc-nai-cci_nanollama-public/svc-nai-cci_nanollama-public_dna.json"
+    },
+    "TheBloke/TinyLlama-1.1B-Chat-v1.0-AWQ": {
+      "parameter_count_billions": 1.17,
+      "architecture": "llama",
+      "reference_path": "out/rand_chinese/TheBloke_TinyLlama-1.1B-Chat-v1.0-AWQ/TheBloke_TinyLlama-1.1B-Chat-v1.0-AWQ_dna.json"
+    },
+    "tiiuae/Falcon3-7B-Base": {
+      "parameter_count_billions": 3.57,
+      "architecture": "llama",
+      "reference_path": "out/rand_chinese/tiiuae_Falcon3-7B-Base/tiiuae_Falcon3-7B-Base_dna.json"
+    },
+    "yaojialzc/Gigi-Llama3-8B-Chinese-zh": {
+      "parameter_count_billions": 6.97,
+      "architecture": "llama",
+      "reference_path": "out/rand_chinese/yaojialzc_Gigi-Llama3-8B-Chinese-zh/yaojialzc_Gigi-Llama3-8B-Chinese-zh_dna.json"
+    },
+    "state-spaces/mamba-370m-hf": {
+      "parameter_count_billions": 0.66,
+      "architecture": "mamba",
+      "reference_path": "out/rand_chinese/state-spaces_mamba-370m-hf/state-spaces_mamba-370m-hf_dna.json"
+    },
+    "state-spaces/mamba-790m-hf": {
+      "parameter_count_billions": 1.44,
+      "architecture": "mamba",
+      "reference_path": "out/rand_chinese/state-spaces_mamba-790m-hf/state-spaces_mamba-790m-hf_dna.json"
+    },
+    "state-spaces/mamba-1.4b-hf": {
+      "parameter_count_billions": 2.52,
+      "architecture": "mamba",
+      "reference_path": "out/rand_chinese/state-spaces_mamba-1.4b-hf/state-spaces_mamba-1.4b-hf_dna.json"
+    },
+    "state-spaces/mamba-2.8b-hf": {
+      "parameter_count_billions": 5.16,
+      "architecture": "mamba",
+      "reference_path": "out/rand_chinese/state-spaces_mamba-2.8b-hf/state-spaces_mamba-2.8b-hf_dna.json"
+    },
+    "openbmb/MiniCPM4.1-8B-GPTQ": {
+      "parameter_count_billions": 6.74,
+      "architecture": "minicpm",
+      "reference_path": "out/rand_chinese/openbmb_MiniCPM4.1-8B-GPTQ/openbmb_MiniCPM4.1-8B-GPTQ_dna.json"
+    },
+    "mii-llm/minerva-chat-v0.1-alpha-sft": {
+      "parameter_count_billions": 2.6,
+      "architecture": "mistral",
+      "reference_path": "out/rand_chinese/mii-llm_minerva-chat-v0.1-alpha-sft/mii-llm_minerva-chat-v0.1-alpha-sft_dna.json"
+    },
+    "Artples/L-MChat-7b": {
+      "parameter_count_billions": 6.57,
+      "architecture": "mistral",
+      "reference_path": "out/rand_chinese/Artples_L-MChat-7b/Artples_L-MChat-7b_dna.json"
+    },
+    "AIChenKai/TinyLlama-1.1B-Chat-v1.0-x2-MoE": {
+      "parameter_count_billions": 1.17,
+      "architecture": "mixtral",
+      "reference_path": "out/rand_chinese/AIChenKai_TinyLlama-1.1B-Chat-v1.0-x2-MoE/AIChenKai_TinyLlama-1.1B-Chat-v1.0-x2-MoE_dna.json"
+    },
+    "hugging-quants/Mixtral-8x7B-Instruct-v0.1-AWQ-INT4": {
+      "parameter_count_billions": 6.57,
+      "architecture": "mixtral",
+      "reference_path": "out/rand_chinese/hugging-quants_Mixtral-8x7B-Instruct-v0.1-AWQ-INT4/hugging-quants_Mixtral-8x7B-Instruct-v0.1-AWQ-INT4_dna.json"
+    },
+    "nvidia/Minitron-4B-Base": {
+      "parameter_count_billions": 4.41,
+      "architecture": "nemotron",
+      "reference_path": "out/rand_chinese/nvidia_Minitron-4B-Base/nvidia_Minitron-4B-Base_dna.json"
+    },
+    "unsloth/Nemotron-3-Nano-30B-A3B": {
+      "parameter_count_billions": 4.86,
+      "architecture": "nemotron_h",
+      "reference_path": "out/rand_chinese/unsloth_Nemotron-3-Nano-30B-A3B/unsloth_Nemotron-3-Nano-30B-A3B_dna.json"
+    },
+    "allenai/OLMo-7B-0724-Instruct-hf": {
+      "parameter_count_billions": 6.65,
+      "architecture": "olmo",
+      "reference_path": "out/rand_chinese/allenai_OLMo-7B-0724-Instruct-hf/allenai_OLMo-7B-0724-Instruct-hf_dna.json"
+    },
+    "allenai/OLMo-2-0425-1B-RLVR1": {
+      "parameter_count_billions": 1.01,
+      "architecture": "olmo2",
+      "reference_path": "out/rand_chinese/allenai_OLMo-2-0425-1B-RLVR1/allenai_OLMo-2-0425-1B-RLVR1_dna.json"
+    },
+    "allenai/Olmo-3-7B-RL-Zero-Math": {
+      "parameter_count_billions": 6.85,
+      "architecture": "olmo3",
+      "reference_path": "out/rand_chinese/allenai_Olmo-3-7B-RL-Zero-Math/allenai_Olmo-3-7B-RL-Zero-Math_dna.json"
+    },
+    "allenai/Olmo-Hybrid-Instruct-SFT-7B": {
+      "parameter_count_billions": 6.05,
+      "architecture": "olmo_hybrid",
+      "reference_path": "out/rand_chinese/allenai_Olmo-Hybrid-Instruct-SFT-7B/allenai_Olmo-Hybrid-Instruct-SFT-7B_dna.json"
+    },
+    "yec019/fbopt-350m-8bit": {
+      "parameter_count_billions": 0.35,
+      "architecture": "opt",
+      "reference_path": "out/rand_chinese/yec019_fbopt-350m-8bit/yec019_fbopt-350m-8bit_dna.json"
+    },
+    "facebook/galactica-1.3b": {
+      "parameter_count_billions": 1.31,
+      "architecture": "opt",
+      "reference_path": "out/rand_chinese/facebook_galactica-1.3b/facebook_galactica-1.3b_dna.json"
+    },
+    "facebook/galactica-6.7b": {
+      "parameter_count_billions": 6.65,
+      "architecture": "opt",
+      "reference_path": "out/rand_chinese/facebook_galactica-6.7b/facebook_galactica-6.7b_dna.json"
+    },
+    "bharatgenai/Param2-17B-A2.4B-Thinking": {
+      "parameter_count_billions": 1.32,
+      "architecture": "param2moe",
+      "reference_path": "out/rand_chinese/bharatgenai_Param2-17B-A2.4B-Thinking/bharatgenai_Param2-17B-A2.4B-Thinking_dna.json"
+    },
+    "Artples/L-MChat-Small": {
+      "parameter_count_billions": 2.65,
+      "architecture": "phi",
+      "reference_path": "out/rand_chinese/Artples_L-MChat-Small/Artples_L-MChat-Small_dna.json"
+    },
+    "ReDiX/Artemide-3.5": {
+      "parameter_count_billions": 3.72,
+      "architecture": "phi3",
+      "reference_path": "out/rand_chinese/ReDiX_Artemide-3.5/ReDiX_Artemide-3.5_dna.json"
+    },
+    "unsloth/Phi-4-mini-instruct-unsloth-bnb-4bit": {
+      "parameter_count_billions": 4.24,
+      "architecture": "phi3",
+      "reference_path": "out/rand_chinese/unsloth_Phi-4-mini-instruct-unsloth-bnb-4bit/unsloth_Phi-4-mini-instruct-unsloth-bnb-4bit_dna.json"
+    },
+    "TIGER-Lab/VLM2Vec-Full": {
+      "parameter_count_billions": 3.72,
+      "architecture": "phi3_v",
+      "reference_path": "out/rand_chinese/TIGER-Lab_VLM2Vec-Full/TIGER-Lab_VLM2Vec-Full_dna.json"
+    },
+    "TheBloke/Qwen-7B-Chat-AWQ": {
+      "parameter_count_billions": 7.06,
+      "architecture": "qwen",
+      "reference_path": "out/rand_chinese/TheBloke_Qwen-7B-Chat-AWQ/TheBloke_Qwen-7B-Chat-AWQ_dna.json"
+    },
+    "Papaperez/Qwen2.5-0.5B-Instruct-Gensyn-Swarm-lanky_reptilian_opossum": {
+      "parameter_count_billions": 0.37,
+      "architecture": "qwen2",
+      "reference_path": "out/rand_chinese/Papaperez_Qwen2.5-0.5B-Instruct-Gensyn-Swarm-lanky_reptilian_opossum/Papaperez_Qwen2.5-0.5B-Instruct-Gensyn-Swarm-lanky_reptilian_opossum_dna.json"
+    },
+    "unsloth/Qwen2.5-Coder-1.5B-bnb-4bit": {
+      "parameter_count_billions": 1.03,
+      "architecture": "qwen2",
+      "reference_path": "out/rand_chinese/unsloth_Qwen2.5-Coder-1.5B-bnb-4bit/unsloth_Qwen2.5-Coder-1.5B-bnb-4bit_dna.json"
+    },
+    "unsloth/Qwen2.5-3B-unsloth-bnb-4bit": {
+      "parameter_count_billions": 2.12,
+      "architecture": "qwen2",
+      "reference_path": "out/rand_chinese/unsloth_Qwen2.5-3B-unsloth-bnb-4bit/unsloth_Qwen2.5-3B-unsloth-bnb-4bit_dna.json"
+    },
+    "IQuestLab/Fleming-R1-7B": {
+      "parameter_count_billions": 4.86,
+      "architecture": "qwen2",
+      "reference_path": "out/rand_chinese/IQuestLab_Fleming-R1-7B/IQuestLab_Fleming-R1-7B_dna.json"
+    },
+    "unsloth/Qwen3-0.6B-Base-unsloth-bnb-4bit": {
+      "parameter_count_billions": 0.51,
+      "architecture": "qwen3",
+      "reference_path": "out/rand_chinese/unsloth_Qwen3-0.6B-Base-unsloth-bnb-4bit/unsloth_Qwen3-0.6B-Base-unsloth-bnb-4bit_dna.json"
+    },
+    "dicta-il/DictaLM-3.0-1.7B-Base": {
+      "parameter_count_billions": 1.72,
+      "architecture": "qwen3",
+      "reference_path": "out/rand_chinese/dicta-il_DictaLM-3.0-1.7B-Base/dicta-il_DictaLM-3.0-1.7B-Base_dna.json"
+    },
+    "unsloth/Qwen3-4B-unsloth-bnb-4bit": {
+      "parameter_count_billions": 3.22,
+      "architecture": "qwen3",
+      "reference_path": "out/rand_chinese/unsloth_Qwen3-4B-unsloth-bnb-4bit/unsloth_Qwen3-4B-unsloth-bnb-4bit_dna.json"
+    },
+    "Aratako/Qwen3-30B-A3B-NSFW-JP": {
+      "parameter_count_billions": 2.73,
+      "architecture": "qwen3_moe",
+      "reference_path": "out/rand_chinese/Aratako_Qwen3-30B-A3B-NSFW-JP/Aratako_Qwen3-30B-A3B-NSFW-JP_dna.json"
+    },
+    "vincentzed-hf/Qwen3-Coder-Next-NVFP4": {
+      "parameter_count_billions": 2.73,
+      "architecture": "qwen3_next",
+      "reference_path": "out/rand_chinese/vincentzed-hf_Qwen3-Coder-Next-NVFP4/vincentzed-hf_Qwen3-Coder-Next-NVFP4_dna.json"
+    },
+    "google/recurrentgemma-2b-it": {
+      "parameter_count_billions": 2.7,
+      "architecture": "recurrent_gemma",
+      "reference_path": "out/rand_chinese/google_recurrentgemma-2b-it/google_recurrentgemma-2b-it_dna.json"
+    },
+    "tiiuae/Falcon3-10B-Base": {
+      "parameter_count_billions": 4.93,
+      "architecture": "llama",
+      "reference_path": "out/rand_chinese/tiiuae_Falcon3-10B-Base/tiiuae_Falcon3-10B-Base_dna.json"
+    },
+    "stabilityai/stablelm-2-zephyr-1_6b": {
+      "parameter_count_billions": 1.41,
+      "architecture": "stablelm",
+      "reference_path": "out/rand_chinese/stabilityai_stablelm-2-zephyr-1_6b/stabilityai_stablelm-2-zephyr-1_6b_dna.json"
+    },
+    "stabilityai/stablelm-3b-4e1t": {
+      "parameter_count_billions": 2.65,
+      "architecture": "stablelm",
+      "reference_path": "out/rand_chinese/stabilityai_stablelm-3b-4e1t/stabilityai_stablelm-3b-4e1t_dna.json"
+    },
+    "openbmb/MiniCPM-MoE-8x2B": {
+      "parameter_count_billions": 2.83,
+      "architecture": "unknown",
+      "reference_path": "out/rand_chinese/openbmb_MiniCPM-MoE-8x2B/openbmb_MiniCPM-MoE-8x2B_dna.json"
+    },
+    "Zyphra/Zamba2-1.2B-instruct": {
+      "parameter_count_billions": 1.98,
+      "architecture": "zamba2",
+      "reference_path": "out/rand_chinese/Zyphra_Zamba2-1.2B-instruct/Zyphra_Zamba2-1.2B-instruct_dna.json"
+    },
+    "swiss-ai/Apertus-8B-Instruct-2509": {
+      "parameter_count_billions": 6.98,
+      "architecture": "apertus",
+      "reference_path": "out/rand_chinese/swiss-ai_Apertus-8B-Instruct-2509/swiss-ai_Apertus-8B-Instruct-2509_dna.json"
+    },
+    "tiiuae/falcon-rw-1b": {
+      "parameter_count_billions": 1.31,
+      "architecture": "falcon",
+      "reference_path": "out/rand_chinese/tiiuae_falcon-rw-1b/tiiuae_falcon-rw-1b_dna.json"
+    },
+    "tiiuae/Falcon-H1-7B-Instruct": {
+      "parameter_count_billions": 5.38,
+      "architecture": "falcon_h1",
+      "reference_path": "out/rand_chinese/tiiuae_Falcon-H1-7B-Instruct/tiiuae_Falcon-H1-7B-Instruct_dna.json"
+    },
+    "unsloth/gemma-2b-bnb-4bit": {
+      "parameter_count_billions": 1.43,
+      "architecture": "gemma",
+      "reference_path": "out/rand_chinese/unsloth_gemma-2b-bnb-4bit/unsloth_gemma-2b-bnb-4bit_dna.json"
+    },
+    "SeaLLMs/SeaLLM-7B-v2.5": {
+      "parameter_count_billions": 3.96,
+      "architecture": "gemma",
+      "reference_path": "out/rand_chinese/SeaLLMs_SeaLLM-7B-v2.5/SeaLLMs_SeaLLM-7B-v2.5_dna.json"
+    },
+    "unsloth/gemma-2-2b-it": {
+      "parameter_count_billions": 2.25,
+      "architecture": "gemma2",
+      "reference_path": "out/rand_chinese/unsloth_gemma-2-2b-it/unsloth_gemma-2-2b-it_dna.json"
+    },
+    "ytu-ce-cosmos/Turkish-Gemma-9b-T1": {
+      "parameter_count_billions": 7.39,
+      "architecture": "gemma2",
+      "reference_path": "out/rand_chinese/ytu-ce-cosmos_Turkish-Gemma-9b-T1/ytu-ce-cosmos_Turkish-Gemma-9b-T1_dna.json"
+    },
+    "unsloth/gemma-3-1b-it-bnb-4bit": {
+      "parameter_count_billions": 0.72,
+      "architecture": "gemma3_text",
+      "reference_path": "out/rand_chinese/unsloth_gemma-3-1b-it-bnb-4bit/unsloth_gemma-3-1b-it-bnb-4bit_dna.json"
+    },
+    "hyper-accel/ci-random-gpt2-350m": {
+      "parameter_count_billions": 0.35,
+      "architecture": "gpt2",
+      "reference_path": "out/rand_chinese/hyper-accel_ci-random-gpt2-350m/hyper-accel_ci-random-gpt2-350m_dna.json"
+    },
+    "EleutherAI/pythia-410m-seed3": {
+      "parameter_count_billions": 0.35,
+      "architecture": "gpt_neox",
+      "reference_path": "out/rand_chinese/EleutherAI_pythia-410m-seed3/EleutherAI_pythia-410m-seed3_dna.json"
+    },
+    "rinna/japanese-gpt-neox-3.6b-instruction-sft-v2": {
+      "parameter_count_billions": 3.52,
+      "architecture": "gpt_neox",
+      "reference_path": "out/rand_chinese/rinna_japanese-gpt-neox-3.6b-instruction-sft-v2/rinna_japanese-gpt-neox-3.6b-instruction-sft-v2_dna.json"
+    },
+    "EleutherAI/deep-ignorance-pretraining-stage-unfiltered": {
+      "parameter_count_billions": 6.65,
+      "architecture": "gpt_neox",
+      "reference_path": "out/rand_chinese/EleutherAI_deep-ignorance-pretraining-stage-unfiltered/EleutherAI_deep-ignorance-pretraining-stage-unfiltered_dna.json"
+    },
+    "unsloth/gpt-oss-20b-bnb-4bit": {
+      "parameter_count_billions": 2.97,
+      "architecture": "gpt_oss",
+      "reference_path": "out/rand_chinese/unsloth_gpt-oss-20b-bnb-4bit/unsloth_gpt-oss-20b-bnb-4bit_dna.json"
+    },
+    "ibm-granite/granite-guardian-3.0-2b": {
+      "parameter_count_billions": 2.11,
+      "architecture": "granite",
+      "reference_path": "out/rand_chinese/ibm-granite_granite-guardian-3.0-2b/ibm-granite_granite-guardian-3.0-2b_dna.json"
+    },
+    "ibm-granite/granite-3.0-3b-a800m-instruct": {
+      "parameter_count_billions": 0.98,
+      "architecture": "granitemoe",
+      "reference_path": "out/rand_chinese/ibm-granite_granite-3.0-3b-a800m-instruct/ibm-granite_granite-3.0-3b-a800m-instruct_dna.json"
+    },
+    "unsloth/granite-4.0-h-tiny": {
+      "parameter_count_billions": 1.29,
+      "architecture": "granitemoehybrid",
+      "reference_path": "out/rand_chinese/unsloth_granite-4.0-h-tiny/unsloth_granite-4.0-h-tiny_dna.json"
+    },
+    "ibm-granite/granite-4.0-h-micro-base": {
+      "parameter_count_billions": 2.22,
+      "architecture": "granitemoehybrid",
+      "reference_path": "out/rand_chinese/ibm-granite_granite-4.0-h-micro-base/ibm-granite_granite-4.0-h-micro-base_dna.json"
+    },
+    "LiquidAI/LFM2.5-1.2B-JP": {
+      "parameter_count_billions": 0.94,
+      "architecture": "lfm2",
+      "reference_path": "out/rand_chinese/LiquidAI_LFM2.5-1.2B-JP/LiquidAI_LFM2.5-1.2B-JP_dna.json"
+    },
+    "hyper-accel/ci-random-llama2-7b": {
+      "parameter_count_billions": 0.53,
+      "architecture": "llama",
+      "reference_path": "out/rand_chinese/hyper-accel_ci-random-llama2-7b/hyper-accel_ci-random-llama2-7b_dna.json"
+    },
+    "unsloth/tinyllama-chat": {
+      "parameter_count_billions": 1.17,
+      "architecture": "llama",
+      "reference_path": "out/rand_chinese/unsloth_tinyllama-chat/unsloth_tinyllama-chat_dna.json"
+    }
+  },
+  "exclusion_reason_counts": {
+    "missing_parameter_count": 20,
+    "outside_size_range": 215
+  }
+}
