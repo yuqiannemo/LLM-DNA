@@ -1,0 +1,225 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{hyperref}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{listings}
+\usepackage{geometry}
+\geometry{margin=1in}
+\title{SVM Experiments with Hugging Face Model-Tree Relations}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Concise summary of the pipeline: export Hugging Face model-tree relations, extract features from cached DNA outputs, train a linear SVM probe to detect model-family signals, and evaluate with held-out test sets and cross-validation. This document summarizes implementation details, experimental design, train/test splitting strategy, and includes placeholder figures and tables for presentation.
+\end{abstract}
+
+\section{Overview}
+The workflow has three main parts:
+\begin{enumerate}
+  \item Export model relations from Hub model-card metadata to form related-model groups.
+  \item Extract feature vectors from precomputed DNA outputs for each model/run.
+  \item Train and evaluate an SVM classifier that predicts membership in a related-model group.
+\end{enumerate}
+
+\section{Exporting the Hugging Face Model Tree}
+Implementation summary:
+\begin{itemize}
+  \item For each model id in the input list, fetch repository metadata via the Hub API.
+  \item Parse fields and card metadata for base-model relationships and config fields that indicate parent/base models.
+  \item Add each model as a node, add an undirected edge for each discovered base relation (A--B).
+  \item Collapse nodes into connected components to produce related-model groups.
+\end{itemize}
+
+Algorithmic detail (union--find streaming style):
+\begin{lstlisting}[basicstyle=\ttfamily\small]
+for model in input_models:
+    info = hf_api.model_info(model)
+    for base in extract_base_models(info):
+        union_find.add(model)
+        union_find.add(base)
+        union_find.union(model, base)
+components = collect_connected_components(union_find)
+write_jsonl(groups)
+\end{lstlisting}
+
+Why union--find:
+\begin{itemize}
+  \item Supports streaming discovery of edges without constructing the full adjacency list first.
+  \item Near-constant amortized cost per union/find.
+  \item Low memory overhead and simple to implement.
+\end{itemize}
+
+Output:
+\begin{itemize}
+  \item JSONL file where each line is an object with a ``models'' array representing a related group.
+  \item A summary JSON with counts (model\_count, node\_count, edge\_count, component\_count, skipped\_models).
+\end{itemize}
+
+\section{Feature Extraction and SVM Implementation}
+Feature sources:
+\begin{itemize}
+  \item Per-model cached DNA outputs (e.g., response vectors, log-prob vectors, per-probe scores).
+  \item Aggregated statistics across probes: mean response, variance, top-$k$ token agreement, entropy, and any hand-engineered distances to canonical outputs.
+  \item Optionally, metadata features (model size bucket, family label, tokenizer type) if available.
+\end{itemize}
+
+Feature pipeline (recommended):
+\begin{enumerate}
+  \item Load cached outputs and align probes across models and runs to a common order.
+  \item Compute numeric features per model or per (model, run) sample.
+  \item Apply standard scaling (zero mean, unit variance) fit on training set; persist scaler.
+  \item Optionally apply PCA to reduce dimensionality (retain e.g., 95\% variance).
+\end{enumerate}
+
+SVM details:
+\begin{itemize}
+  \item Use a linear SVM (e.g., scikit-learn's \texttt{LinearSVC} or \texttt{SGDClassifier} with hinge loss) for interpretability and speed on high-dimensional features.
+  \item Regularization: tune penalty $C$ over a small grid (e.g., $[0.01,0.1,1,10]$).
+  \item Use class weighting or balanced sampling if classes are imbalanced.
+  \item For probabilistic outputs, wrap the SVM with Platt scaling (e.g., \texttt{CalibratedClassifierCV}) if needed for ROC/PR curves.
+\end{itemize}
+
+Minimal training loop (sklearn-style):
+\begin{lstlisting}[basicstyle=\ttfamily\small]
+from sklearn.preprocessing import StandardScaler
+from sklearn.svm import LinearSVC
+scaler = StandardScaler().fit(X_train)
+Xtr = scaler.transform(X_train)
+clf = LinearSVC(C=1.0, max_iter=10000).fit(Xtr, y_train)
+\end{lstlisting}
+
+\section{Experiment Outline}
+Goals:
+\begin{itemize}
+  \item Evaluate whether DNA outputs contain signals that correlate with model-tree relations.
+  \item Quantify detection performance (per-group and overall).
+  \item Analyze robustness across sampling settings (temperature/top-p).
+\end{itemize}
+
+Experimental arms:
+\begin{itemize}
+  \item Baseline: random classifier or simple logistic regression.
+  \item Linear SVM probe on raw features.
+  \item Linear SVM + PCA dimensionality reduction.
+  \item Cross-run generalization tests: train on one sampling regime, test on another.
+\end{itemize}
+
+Metrics:
+\begin{itemize}
+  \item Accuracy, precision, recall, F1 (micro and macro), ROC AUC, PR AUC.
+  \item Confusion matrices aggregated at group-level.
+\end{itemize}
+
+\section{Train / Test Split Strategy}
+Recommended approaches:
+\begin{enumerate}
+  \item \textbf{Group-aware holdout (preferred)}: Split by related-model group so that all models from some groups are only in train and other groups only in test. This evaluates generalization to unseen model families.
+  \item \textbf{Model-level stratified split}: If labels are binary per-model (e.g., in-group vs out-group for a particular relation), stratify splits by label while ensuring models from the same group are not split across train/test to avoid leakage.
+  \item \textbf{K-fold cross-validation with grouping}: Use GroupKFold where the group id is the connected-component id. This yields k folds where groups are exclusive per fold.
+  \item \textbf{Per-run generalization}: Train on outputs from a subset of sampling settings (e.g., temperature=0.2) and test on others (temperature=0.3, different top-p).
+\end{enumerate}
+
+Practical splits:
+\begin{itemize}
+  \item Typical split sizes: 70\% train groups / 15\% val groups / 15\% test groups.
+  \item For small group counts, prefer leave-one-group-out or repeated GroupKFold.
+  \item When doing per-sample classification (many samples per model), ensure group-wise partitioning to prevent sample-level leakage.
+\end{itemize}
+
+\section{Experiment Details (Suggested Configuration)}
+\begin{itemize}
+  \item Input models: the full model list (N $\approx$ 11k). Optionally pre-filter by availability or size bucket.
+  \item Feature vector dimensionality: depends on probes; example 512--4096. Use PCA if >1024.
+  \item Classifier: LinearSVC with grid search on $C \in \{0.01,0.1,1,10\}$.
+  \item Validation: GroupKFold with $k=5$ (groups = connected components).
+  \item Repeat experiments with caching and with incremental checkpointing to measure wall time.
+  \item Logging: store metrics per-fold, per-group summary, and top-k misclassified models for manual inspection.
+\end{itemize}
+
+\section{Figures and Tables (placeholders)}
+\subsection{Figure suggestions}
+\begin{figure}[ht]
+  \centering
+  \begin{subfigure}{0.48\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/roc_curve_placeholder.pdf}
+    \caption{ROC curve (SVM vs baseline)}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}{0.48\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/pr_curve_placeholder.pdf}
+    \caption{Precision--Recall curve}
+  \end{subfigure}
+  \caption{Primary binary-classification performance plots.}
+\end{figure}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.6\linewidth]{figures/stability_heatmap_placeholder.pdf}
+  \caption{Heatmap showing probe stability or accuracy across sampling settings (temperature/top-p).}
+\end{figure}
+
+\subsection{Example tables}
+\begin{table}[ht]
+\centering
+\caption{Aggregate classifier performance (mean $\pm$ std over folds)}
+\begin{tabular}{lcccc}
+\toprule
+Model & Accuracy & Precision & Recall & F1 \\
+\midrule
+Baseline (random) & 0.50 & 0.50 & 0.50 & 0.50 \\
+Logistic Regression & 0.72 $\pm$ 0.03 & 0.71 $\pm$ 0.04 & 0.70 $\pm$ 0.03 & 0.70 $\pm$ 0.03 \\
+Linear SVM (C=1.0) & 0.78 $\pm$ 0.02 & 0.77 $\pm$ 0.03 & 0.76 $\pm$ 0.03 & 0.76 $\pm$ 0.02 \\
+SVM + PCA (95\%) & 0.76 $\pm$ 0.03 & 0.75 $\pm$ 0.03 & 0.75 $\pm$ 0.04 & 0.75 $\pm$ 0.03 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[ht]
+\centering
+\caption{Per-group breakdown (top 8 groups by size)}
+\begin{tabular}{lrrrr}
+\toprule
+Group ID & \# Models & Accuracy & Precision & Recall \\
+\midrule
+group\_A & 42 & 0.92 & 0.90 & 0.95 \\
+group\_B & 38 & 0.84 & 0.82 & 0.80 \\
+group\_C & 30 & 0.79 & 0.75 & 0.78 \\
+... & ... & ... & ... & ... \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Practical Recommendations and Optimizations}
+\begin{itemize}
+  \item The dominant runtime cost is fetching model metadata; parallelize API calls with a thread pool and caching.
+  \item Use group-aware splitting to avoid leakage from related models appearing in both train and test.
+  \item Keep the classifier linear for interpretability and speed; examine coefficients to find discriminative features.
+  \item Store intermediate caches and partial JSONL outputs to resume long runs.
+  \item Save the scaler, PCA model, and trained SVM for reproducible evaluation pipelines.
+\end{itemize}
+
+\section{Appendix: Example Commands}
+\begin{verbatim}
+# Export model-tree relations (nohup recommended for long runs)
+python export_hf_model_tree.py \
+  --models-file huggingface_llm_list.jsonl \
+  --output-file model_relations.jsonl \
+  --summary-file model_relations_summary.json
+
+# Train an SVM probe (sketch)
+python scripts/train_svm_probe.py \
+  --features-dir out/dna_features \
+  --relations model_relations.jsonl \
+  --output-dir out/svm_probe \
+  --cv-folds 5 --svm-C 1.0
+\end{verbatim}
+
+\end{document}

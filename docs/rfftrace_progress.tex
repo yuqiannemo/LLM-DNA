@@ -1,0 +1,103 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage{geometry}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\geometry{margin=1in}
+\title{RFFTrace Progress Report}
+\author{}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This note summarises the current repository status for distributional
+LLM fingerprinting: exact RBF‑MMD pilot experiments are implemented and
+tested; Random Fourier Feature (RFF) based fingerprints ("RFFTrace")
+have been specified but not yet implemented or evaluated.
+\end{abstract}
+
+\section{Summary of current implementation}
+\begin{itemize}
+  \item Exact RBF‑MMD: implemented in \texttt{scripts/run\_rbf\_mmd\_pilot.py} as
+    the function \texttt{exact\_mmd2(a,b,sigma)} and exercised by the pilot.
+  \item Pilot script: the pilot selects small subsets (models/prompts),
+    computes three retrieval baselines: \texttt{single\_cosine}, \texttt{mean\_cosine},
+    and \texttt{exact\_rbf\_mmd}, and writes results to \texttt{out/rbf\_mmd\_pilot}.
+  \item Tests: \texttt{tests/test\_distributional\_pilot.py} checks core utilities,
+    including \texttt{exact\_mmd2} behaving correctly for identical samples.
+\end{itemize}
+
+\section{Pilot results (brief)}
+On a very small pilot (8 models, 20 prompts) cached under \texttt{out/rand\_chinese},
+all three methods reached perfect retrieval (top1/top3/top5/MRR = 1.0). The repo
+includes a short report at \texttt{docs/rbf\_mmd\_pilot.md} summarising these numbers.
+
+\section{RFFTrace status}
+\begin{itemize}
+  \item Not implemented: there is currently no code that computes Random Fourier
+    Features (no \texttt{psi} map, no projection dimension \(D\), nor per‑prompt averaging over \(R\) samples).
+  \item No experiments: retrieval/identification comparisons using RFF approximations
+    (RFFTrace) are not present in the repo; only exact MMD pilot exists.
+\end{itemize}
+
+\section{RFFTrace algorithm (planned)}
+For reproducibility, the planned RFFTrace pipeline is:
+\begin{enumerate}
+  \item For each model \(m\) and prompt \(x_i\), sample responses \(z_{m,i,r}\) for \(r=1\ldots R\).
+  \item Embed each response into a vector \(u_{m,i,r}=\phi(\text{response})\) using the current sentence encoder.
+  \item Draw random frequencies and phases for RFF: for $j=1\ldots D$, sample $\omega_j\sim\mathcal{N}(0,\frac{1}{\gamma}I)$ and $b_j\sim\text{Uniform}(0,2\pi)$.
+  \item Compute the nonlinear feature map
+  $$\psi(u)=\sqrt{\tfrac{2}{D}}\left[\cos(\omega_j^\top u + b_j)\right]_{j=1}^D.$$\\
+  \item Per prompt, average the RFF features:
+  $$\widehat{\mu}_{m,i}=\frac{1}{R}\sum_{r=1}^R \psi(u_{m,i,r}).$$
+  \item Concatenate (and optionally normalize/compress) across prompts:
+  $$\widehat v_m=\frac{1}{\sqrt t}[\widehat{\mu}_{m,1};\ldots;\widehat{\mu}_{m,t}].$$
+\end{enumerate}
+
+The squared Euclidean distance between two RFFTrace vectors approximates the
+average per‑prompt RBF MMD between the two response distributions.
+
+\section{Planned experiments}
+Primary comparisons to run once RFF is implemented:
+\begin{itemize}
+  \item Retrieval on the existing pilot subset: compare \texttt{single\_cosine}, \texttt{mean\_cosine}, \texttt{exact\_rbf\_mmd}, and \texttt{RFFTrace} for several $(R,D,\gamma)$.
+  \item Sensitivity sweeps: vary $R\in\{2,4,8,16\}$, $D\in\{256,1024,4096\}$, bandwidth $\gamma$ (median heuristic and multiples).
+  \item Cross‑temperature identification: test robustness when enrolling at one decoding setting and querying at another.
+  \item Compute / memory profiling: measure time and peak memory per model for RFF vs exact MMD.
+  \item Baseline ablations: compare RFF averages against naive averaging of original embeddings (the ``mean'' baseline) to show (or disprove) the benefit.
+\end{itemize}
+
+\section{Implementation plan}
+I can implement RFFTrace with the following deliverables:
+\begin{enumerate}
+  \item A new script \texttt{scripts/run\_rfftrace\_pilot.py} that mirrors the existing RBF pilot, adding RFF computation and parameter sweeps.
+  \item Unit tests covering the RFF feature map consistency and small‑sample behaviour.
+  \item CSV/JSON outputs under \texttt{out/rfftrace\_pilot} and a short Markdown/LaTeX summary like the existing pilot.
+\end{enumerate}
+
+Estimated effort: small implementation (1–2 hours) plus pilot runs (minutes for small subsets; hours if scaling up).
+
+\section{How to run the existing exact RBF pilot}
+Use the pilot script that is already in the repository. Example:
+\begin{verbatim}
+python3 scripts/run_rbf_mmd_pilot.py --data-dir out/rand_chinese --output-dir out/rbf_mmd_pilot
+\end{verbatim}
+
+\section{Next steps}
+Tell me whether you want me to:
+\begin{itemize}
+  \item Implement RFFTrace and run the small pilot now (adds code + tests + outputs).
+  \item Add RFF features only and leave the pilot runs for you to execute locally.
+  \item Draft a figure/table template for presenting RFF sensitivity sweeps in LaTeX.
+\end{itemize}
+
+\section{Files of interest}
+\begin{itemize}
+  \item Existing pilot: \texttt{scripts/run\_rbf\_mmd\_pilot.py}
+  \item Pilot report: \texttt{docs/rbf\_mmd\_pilot.md}
+  \item Tests: \texttt{tests/test\_distributional\_pilot.py}
+\end{itemize}
+
+\end{document}

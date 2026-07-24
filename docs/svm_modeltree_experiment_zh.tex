@@ -1,0 +1,131 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage[utf8]{inputenc}
+\usepackage{geometry}
+\geometry{margin=1in}
+\title{DNA 探针扫描 — 模型树 SVM 实验（实际结果）}
+\author{}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+本文报告记录了使用 \texttt{export\_hf\_model\_tree.py} 和
+\texttt{evaluate\_dna\_probe\_sweep.py} 的实际运行过程，所用的模型关系文件位于
+\texttt{out/hf\_model\_tree/model\_relations.jsonl}，实验输出位于
+\texttt{out/dna\_probe\_sweep\_modeltree}。
+\end{abstract}
+
+\section{概述}
+本次流水线执行步骤如下：
+\begin{enumerate}
+  \item 使用流式并查集（union--find）从模型列表导出 Hugging Face 模型关系（连通分量）。
+  \item 在多种生成设置（runs）上，使用最近邻和成对线性 SVM 探针评估 DNA 可识别性。
+  \item 将汇总指标、预测 CSV 和诊断图写入 \texttt{out/dna\_probe\_sweep\_modeltree}。
+\end{enumerate}
+
+\section{模型树导出摘要}
+导出器写入了 \texttt{out/hf\_model\_tree/model\_relations.jsonl} 及摘要文件
+\texttt{out/hf\_model\_tree/model\_relations\_summary.json}。摘要中的关键计数：
+\begin{itemize}
+  \item 输入模型数量：11812
+  \item 解析后节点数：13330
+  \item 提取的 base 边数：6282
+  \item 大小 $\ge2$ 的连通分量（组）数：790
+  \item 跳过的模型（获取元数据时出错）：618
+\end{itemize}
+
+\section{SVM 探针的实际实现}
+脚本的实际做法概述：
+\begin{itemize}
+  \item 对每个运行（生成设置）加载预计算的模型 DNA 特征向量。
+  \item 构建查询模型与候选基模型之间的所有成对示例，每对记录两者间的距离（默认为余弦距离）。
+  \item 如果查询与基模型为同一模型或在导出的模型关系中属于同一关系组，则标记为正样本，否则为负样本。
+  \item 具体划分过程：
+    \begin{enumerate}
+      \item 选择一个运行（\texttt{test\_run\_name}）作为保留的测试运行。
+      \item 通过遍历其余所有运行构建训练示例，生成这些运行中的所有（query, base）配对。
+      \item 测试示例仅来自被保留的测试运行（该运行中查询与基模型的所有配对）。
+      \item 训练和测试中的正样本依据 \texttt{out/hf\_model\_tree/model\_relations.jsonl} 中的
+        \texttt{is\_same\_or\_related(query, base)} 判定。
+      \item 负样本按 \texttt{sampled\_negatives = round(negative\_ratio * \#positives)} 随机采样（默认
+        \texttt{negative\_ratio=1.0}），脚本使用 RNG 种子 42 保证可复现性。
+    \end{enumerate}
+  \item 特征与分类器：使用单一特征 $x = -\text{distance}$（取负以使较大值倾向正类），
+    经 \texttt{StandardScaler} 变换后喂入带 \texttt{class\_weight='balanced'} 的 \texttt{LinearSVC}。
+\end{itemize}
+
+\section{训练/测试划分（具体）}
+本次运行采用跨运行（leave‑one‑run‑out）划分：
+\begin{itemize}
+  \item 测试集：仅包含来自单个被保留运行（\texttt{test\_run\_name}）构建的所有配对示例。
+  \item 训练集：由其他所有运行（除被保留运行外的 \texttt{--run} 规范）构建的所有配对示例组成。
+  \item 负样本采样：配对构建后，按代码中的 \texttt{balance\_examples()} 随机采样负样本至配置的
+    \texttt{negative\_ratio}（默认 1.0）；测试路径也采用相同的采样（测试负样本同样采样为 1.0 倍正样本）。
+  \item 后果：该划分衡量跨生成设置（temperature/top‑p）的泛化能力，但不保证严格的组级排除——
+    如果相关模型在不同运行中都被生成，则可能同时出现在训练和测试中。若要做组级隔离评估
+   （确保测试组的相关模型不出现在训练中），请使用基于连通分量 id 的 \texttt{GroupKFold} 或显式的组保留策略。
+  \item 观测到的测试/训练比率：该比率并非事先固定选择，而是由 leave‑one‑run‑out 设计、每运行配对构建
+    以及平衡负样本（\texttt{negative\_ratio=1.0}）共同决定。每个集合在采样后包含 正样本 + 采样负样本
+   （正负样本数近似相等），因此正样本率由设计决定约为 50\%。在生成的摘要
+    （\texttt{temp\_top\_p\_modeltree\_summary.json}）中，每个运行的测试占比大约在 7.9\%–13.5\%
+   （平均约 12.5\%），差异来源于不同被保留运行生成的配对数量不同。负样本采样的 RNG 种子为 42，
+    保证了采样的确定性与可复现性。
+\end{itemize}
+
+\section{结果（示例运行）}
+脚本生成了 \texttt{temp\_top\_p\_modeltree\_summary.json}，包含每个运行的聚合指标。
+表\ref{tab:summary} 展示了本次扫描中部分运行的关键指标。
+
+\begin{table}[ht]
+\centering
+\caption{每运行汇总（最近邻 + 线性 SVM 指标）}\label{tab:summary}
+\begin{tabular}{llrrrrr}
+\toprule
+运行 & 温度 & Top‑p & 模型数 & Top1 & MRR & 线性 AUC \\
+\midrule
+temp00\_p08\_r1 & 0.0 & 0.8 & 66 & 0.924 & 0.940 & 0.936 \\
+temp02\_p08\_r1 & 0.2 & 0.8 & 96 & 0.406 & 0.496 & 0.818 \\
+temp02\_p09\_r1 & 0.2 & 0.9 & 97 & 0.361 & 0.449 & 0.801 \\
+temp02\_p10\_r1 & 0.2 & 1.0 & 93 & 0.387 & 0.484 & 0.804 \\
+temp03\_p08\_r1 & 0.3 & 0.8 & 98 & 0.327 & 0.428 & 0.773 \\
+temp03\_p09\_r1 & 0.3 & 0.9 & 98 & 0.296 & 0.400 & 0.759 \\
+temp03\_p10\_r1 & 0.3 & 1.0 & 97 & 0.227 & 0.312 & 0.723 \\
+temp05\_p08\_r1 & 0.5 & 0.8 & 88 & 0.239 & 0.311 & 0.706 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{图}
+以下为生成的诊断图（来自实验输出目录），如需展示可替换为更高分辨率导出图像。
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.8\\linewidth]{out/dna_probe_sweep_modeltree/temp_top_p_modeltree_curves.png}
+  \caption{按设置组织的热图网格。每个面板显示 top-1/top-3/top-5/MRR 在 temperature 与 top-p 上的分布，并标出最佳单元。}
+\end{figure}
+
+\begin{figure}[ht]
+  \centering
+  \begin{tabular}{cc}
+    \includegraphics[width=0.45\\linewidth]{out/dna_probe_sweep_modeltree/temp_top_p_modeltree_linear_accuracy_setting_heatmap.png} &
+    \includegraphics[width=0.45\\linewidth]{out/dna_probe_sweep_modeltree/temp_top_p_modeltree_top1_setting_heatmap.png} \\
+    (a) 线性准确率热图 & (b) Top‑1 热图 \\
+  \end{tabular}
+  \caption{按设置（temperature × top-p）划分的单指标热图。}
+\end{figure}
+
+\section{说明与下一步}
+\begin{itemize}
+  \item 该 SVM 探针故意保持简单（单特征线性分类器），在低温度运行（例如 \texttt{temp00\_p08\_r1}）中表现良好，
+    因为最近邻效果已很强；随着温度升高，自我距离增大，性能下降。
+  \item 若需要组感知评估（在未见的相关组上测试），我可以将 \texttt{evaluate\_dna\_probe\_sweep.py}
+    修改为使用 \texttt{GroupKFold} 或按连通分量 id 做显式保留并重新生成指标。
+  \item 演示或展示时可直接使用文中 PNG 以及 \texttt{temp\_top\_p\_modeltree\_summary.json}
+    / \texttt{temp\_top\_p\_modeltree\_summary.csv} 作为表和图的来源。
+\end{itemize}
+
+\end{document}

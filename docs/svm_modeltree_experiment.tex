@@ -1,0 +1,325 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage[utf8]{inputenc}
+\usepackage{geometry}
+\usepackage[hidelinks]{hyperref}
+\geometry{margin=1in}
+
+\title{Model-Tree Pairwise SVM for LLM-DNA Robustness\\
+\large Experimental Protocol and Interim Results}
+\author{}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This report evaluates how stochastic decoding affects model identification from
+LLM-DNA signatures.  It compares cosine nearest-neighbour retrieval with
+pairwise linear and radial-basis-function (RBF) support vector machines (SVMs)
+that predict whether two models are related. Positive pairs mix identical
+models with models connected in a Hugging Face model tree, so this legacy
+verification task is not a like-for-like alternative to exact identification.
+Because the generation sweep is incomplete, this snapshot
+uses a fixed 77-model cohort shared by every reported decoding setting, avoiding
+comparisons between different successful-model subsets.
+\end{abstract}
+
+\section{Task definition}
+For a model $m$ and decoding setting $s=(T,p)$, the pipeline generates responses
+to a fixed prompt set and converts them into a DNA vector
+$\mathbf{d}_{m,s}\in\mathbb{R}^{128}$.  We evaluate two related tasks.
+
+\paragraph{Exact-model retrieval.}
+Given a query DNA $\mathbf{d}_{m,s}$, rank the model DNAs in the fixed reference
+gallery by cosine distance.  A retrieval is correct when the DNA of the same
+model is ranked first.  This task produces top-1, top-3, top-5, and mean
+reciprocal rank (MRR).
+
+\paragraph{Model-relatedness classification.}
+Given a query/reference pair $(m_i,m_j)$, predict
+\begin{equation}
+ y_{ij} =
+ \begin{cases}
+ 1, & m_i=m_j\text{ or }m_i\text{ and }m_j\text{ belong to the same exported model-tree component},\\
+ 0, & \text{otherwise}.
+ \end{cases}
+\end{equation}
+The classifier receives one scalar feature,
+$x_{ij}=-d_{\mathrm{cos}}(\mathbf{d}_{m_i,s},\mathbf{d}_{m_j,\mathrm{ref}})$,
+so larger values indicate greater similarity.  This formulation avoids treating
+only the exact same model as positive and therefore represents known model
+lineage in the labels.
+
+\section{Experimental data}
+
+\subsection{Model set}
+The requested sweep contains 100 Hugging Face models listed in
+\texttt{configs/rand\_chinese\_0p3b\_7b\_rerun.jsonl}.  Evaluation uses the
+intersection of models with valid DNA files in both the unsuffixed reference
+gallery and the relevant sweep run. To make settings directly comparable, the
+snapshot first retains runs with at least 80 available models, then intersects
+their model IDs with the reference gallery. This produces one cohort of 77
+models used for every reported retrieval query, SVM training run, and SVM test
+run. The exact cohort and pre-filter availability counts are stored in
+\texttt{temp\_top\_p\_modeltree\_common\_models.json}; no model is selected
+using test performance.
+
+\subsection{Prompt set and DNA construction}
+Every model receives the same 100 synthetic classical-Chinese prompts from
+\texttt{data/rand/rand\_dataset\_chinese.json}.  The dataset generator uses seed
+42, and the saved extraction metadata identifies the probe set as
+\texttt{rand\_chinese\_100}.  Each response is embedded with
+\texttt{all-mpnet-base-v2} (768 dimensions); the 100 response embeddings are
+concatenated and reduced by a seeded Gaussian random projection to one
+128-dimensional DNA signature.  The response length limit is 1024 tokens and
+the extraction seed is 42.  Thus, prompts and feature construction are held
+fixed while only decoding parameters change.
+
+\subsection{Decoding settings}
+The planned grid uses temperatures $T\in\{0.0,0.2,0.3,0.5,0.7\}$ and
+top-$p\in\{0.8,0.9,1.0\}$.  For $T=0$, sampling is disabled; for $T>0$,
+sampling is enabled with the displayed top-$p$.  Each suffix
+\texttt{\_tXX\_pYY\_r1} identifies its temperature, top-$p$, and repeat.
+
+The 80-model availability rule retains the following settings:
+\[
+(0.0,0.8),\ (0.2,0.8),\ (0.2,0.9),\ (0.2,1.0),\
+(0.3,0.8),\ (0.3,0.9),\ (0.3,1.0),\ (0.5,0.8),\
+(0.5,1.0),\ (0.7,0.9).
+\]
+The $(0.7,0.9)$ cell uses the earlier complete \texttt{\_temp07\_run} output.
+The current $(0.0,0.9)$, $(0.0,1.0)$, $(0.5,0.9)$, $(0.7,0.8)$, and
+$(0.7,1.0)$ runs have 46, 3, 17, 2, and 0 available models, respectively, and
+are excluded until their reruns provide adequate coverage. At $T=0$, top-$p$
+is inactive because sampling is disabled; the additional deterministic cells
+will therefore be a data-completeness check rather than a decoding comparison.
+The reference gallery consists of the existing unsuffixed DNA records under
+\texttt{out/rand\_chinese}.  Its historical response files do not record an
+explicit temperature/top-$p$ pair, so it should be described as a fixed
+reference gallery rather than assigned an inferred decoding setting.
+
+\section{Model-tree labels}
+The relation exporter reads Hugging Face metadata and joins base-model links
+with a streaming union--find procedure.  The resulting connected components
+are stored in \texttt{out/hf\_model\_tree/model\_relations.jsonl}.  The export
+summary is:
+\begin{itemize}
+  \item 11,812 requested models and 13,330 parsed nodes;
+  \item 6,282 extracted base-model edges;
+  \item 790 connected components of size at least two;
+  \item 618 skipped metadata requests; and
+  \item external models excluded from the exported relation groups.
+\end{itemize}
+Connected-component membership is transitive.  This is a practical lineage
+label, not a claim that every pair in a component has identical behaviour.
+
+\section{SVM specification}
+
+\subsection{Classifiers used in the reported experiment}
+The linear scikit-learn pipeline is
+\begin{center}
+\texttt{StandardScaler()} $\rightarrow$
+\texttt{LinearSVC(C=1.0, class\_weight='balanced', dual='auto',}
+\texttt{max\_iter=20000, random\_state=42)}.
+\end{center}
+The RBF-kernel probe uses
+\texttt{SVC(kernel='rbf', C=1.0, gamma='scale',
+class\_weight='balanced', random\_state=42)}.  Both probes were enabled in the
+snapshot reported here.  Because the input has only one feature (negative
+cosine distance), the linear model learns a threshold in standardized distance
+space, while the RBF model can learn a nonlinear decision interval along that
+same scalar axis.  This kernel probe is distinct from the exact RBF-MMD
+distributional experiment.
+
+\subsection{Class balancing}
+All positive pairs are retained.  Negatives are deterministically downsampled
+without replacement using seed 42 and a negative-to-positive ratio of 1:1.
+The same 1:1 balancing rule is used for the held-out test examples.  The saved
+summaries therefore have a 50\% positive rate in both training and testing;
+\texttt{class\_weight='balanced'} remains enabled as a safeguard.  Metrics on
+this balanced test sample should not be interpreted as performance under the
+natural, highly imbalanced prevalence of all possible model pairs.
+
+\section{Train/test protocol}
+The SVM uses leave-one-decoding-run-out evaluation.  For each displayed
+temperature/top-$p$ cell:
+\begin{enumerate}
+  \item that run is held out and all of its valid query/reference pairs form
+        the test pool;
+  \item every other run supplied to the evaluator forms the training pool;
+  \item training and test pools are balanced independently as described above;
+        and
+  \item the SVM is fit once on the training pool and evaluated on the held-out
+        setting.
+\end{enumerate}
+Before constructing any pairs, every retained run and the reference gallery are
+restricted to the same 77 model IDs. Thus, both the training pool and held-out
+test pool use the identical model cohort, although they use different decoding
+runs.
+Training and testing are therefore performed \emph{across different decoding
+settings}, not on a random pair split within the same setting.  A training run
+may share the same temperature or top-$p$ with the test run, but it cannot be
+the identical run specification.
+
+There are 10 retained decoding runs. Consequently, each fold trains on nine
+runs and tests on one, a 90\%/10\% split by run. For one run, the 77 query models
+are paired with the same 77 reference models, producing $77^2=5{,}929$ ordered
+pairs. Of these, 99 are positive: 77 same-model diagonal pairs and 22 ordered
+off-diagonal pairs connected by the exported model-tree labels. The remaining
+5,830 pairs are negative. Because the cohort and relation labels are fixed,
+these counts are identical in every fold and for both SVM variants.
+
+\begin{table}[ht]
+\centering
+\caption{Pair accounting for every leave-one-decoding-run-out fold. ``Raw
+negative'' is the number available before sampling; all positives are retained,
+and an equal number of negatives is sampled with seed 42. Linear and RBF SVMs
+use the same sampled train and test pairs.}
+\label{tab:pair-counts}
+\begin{tabular}{lrrrrr}
+\toprule
+Split & Runs & Positive & Raw negative & Sampled negative & Final samples \\
+\midrule
+Train & 9 & 891 & 52,470 & 891 & 1,782 \\
+Test  & 1 & 99  & 5,830  & 99  & 198 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Thus, the raw pair pool is highly imbalanced: positives are only
+$99/5{,}929\approx1.67\%$ of each run's pairs. The reported classification
+metrics are instead computed on the balanced 198-pair test sample, with 99
+positives and 99 negatives. This distinction is important when interpreting
+accuracy: the reported values measure discrimination on a controlled balanced
+test set, not accuracy at the natural pair prevalence.
+
+Model identities and model-tree components are not held out: the same model can
+appear under different decoding settings in training and testing.  The current
+question is therefore robustness to a decoding shift for known models, not
+generalization to unseen model families.  A family-held-out protocol would
+require grouping by model-tree component and is a separate experiment.
+
+\section{Metrics}
+
+\paragraph{Retrieval metrics.}
+Top-$k$ is the fraction of queries for which the exact model appears among the
+first $k$ candidates.  MRR is
+$\frac{1}{N}\sum_{i=1}^{N}1/\mathrm{rank}_i$.  Macro precision, recall, and F1
+are also saved for exact-model top-1 predictions.
+
+\paragraph{Binary SVM metrics.}
+We report accuracy, balanced accuracy, positive-class precision, recall and F1,
+specificity, Matthews correlation coefficient (MCC), ROC-AUC, and average
+precision.  Balanced accuracy, MCC, ROC-AUC, and average precision are included
+because ordinary accuracy alone can be misleading for related/unrelated pair
+classification.  The summary files also record TP, TN, FP, FN, the original
+pair counts, and the sampled pair counts.
+
+\paragraph{Missing settings.}
+A missing point in the line plots means that the run had fewer than 80 available
+models when this snapshot was generated, normally because GPU scarcity left too
+many generation tasks failed or unfinished. Missing points are not zero scores,
+and lines are broken rather than interpolated across them. These runs are being
+rerun and will be added once they satisfy the common-cohort rule.
+
+\section{Interim results}
+Table~\ref{tab:summary} reports the snapshot values stored in
+\texttt{temp\_top\_p\_modeltree\_summary.json}.  These values will be replaced
+after all planned sweep cells have completed.
+
+\begin{table}[ht]
+\centering
+\caption{Fair per-setting comparison on the same 77-model cohort. Top-1 and MRR
+evaluate exact-model cosine retrieval. Lin. and RBF columns report balanced-test
+accuracy and ROC-AUC under leave-one-run-out evaluation. Runs with fewer than
+80 available models are excluded from this snapshot.}
+\label{tab:summary}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lrrrrrrrrr}
+\toprule
+Run & $T$ & Top-$p$ & Models & Top-1 & MRR & Lin. acc. & Lin. AUC & RBF acc. & RBF AUC \\
+\midrule
+temp00\_p08\_r1 & 0.0 & 0.8 & 77 & 0.922 & 0.935 & 0.808 & 0.906 & 0.843 & 0.837 \\
+temp02\_p08\_r1 & 0.2 & 0.8 & 77 & 0.442 & 0.532 & 0.722 & 0.808 & 0.783 & 0.764 \\
+temp02\_p09\_r1 & 0.2 & 0.9 & 77 & 0.455 & 0.541 & 0.753 & 0.834 & 0.773 & 0.792 \\
+temp02\_p10\_r1 & 0.2 & 1.0 & 77 & 0.442 & 0.540 & 0.732 & 0.813 & 0.758 & 0.787 \\
+temp03\_p08\_r1 & 0.3 & 0.8 & 77 & 0.377 & 0.481 & 0.753 & 0.774 & 0.732 & 0.799 \\
+temp03\_p09\_r1 & 0.3 & 0.9 & 77 & 0.351 & 0.468 & 0.737 & 0.798 & 0.732 & 0.795 \\
+temp03\_p10\_r1 & 0.3 & 1.0 & 77 & 0.260 & 0.353 & 0.687 & 0.713 & 0.682 & 0.752 \\
+temp05\_p08\_r1 & 0.5 & 0.8 & 77 & 0.247 & 0.333 & 0.657 & 0.708 & 0.646 & 0.731 \\
+temp05\_p10\_r1 & 0.5 & 1.0 & 77 & 0.169 & 0.255 & 0.606 & 0.633 & 0.616 & 0.638 \\
+temp07\_p09\_legacy & 0.7 & 0.9 & 77 & 0.078 & 0.170 & 0.561 & 0.533 & 0.545 & 0.581 \\
+\bottomrule
+\end{tabular}
+}
+\end{table}
+
+On the fixed cohort, exact-model retrieval falls sharply as decoding becomes
+more stochastic: top-1 decreases from 0.922 at $T=0$ to 0.442--0.455 at
+$T=0.2$, 0.260--0.377 at $T=0.3$, 0.169--0.247 at $T=0.5$, and 0.078 for the
+legacy $T=0.7$ run. The pairwise probes degrade more gradually. This does not
+establish that model-tree relatedness survives better than exact identity: 77
+of the 99 positive ordered pairs are exact same-model pairs, the binary task is
+much easier than 77-way retrieval, and its test prevalence is artificially
+50\%. The supported statement is only that aggregate same-or-related distance
+separation degrades more slowly on this controlled balanced sample.
+
+The RBF kernel does not consistently dominate the linear threshold. Across the
+fixed-cohort cells, their accuracies differ by at most 0.061: RBF is higher at
+$T=0$, $T=0.2$, and $(0.5,1.0)$, while linear is slightly higher for the
+$T=0.3$ cells, $(0.5,0.8)$, and the legacy $T=0.7$ cell. This mixed difference is
+consistent with both classifiers receiving only one scalar distance feature;
+there is limited structure for the kernel to exploit.  These observations
+remain provisional because each cell has one generation repeat and the grid is
+not complete.
+
+\section{Figures}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.95\linewidth]{out/dna_probe_sweep_modeltree/temp_top_p_modeltree_curves.png}
+  \caption{Exact-model retrieval on the shared 77-model cohort. Each panel fixes
+  top-$p$; labeled lines show top-1, top-3, top-5, and MRR as temperature changes.
+  Missing settings failed the 80-model availability rule, and lines are broken
+  rather than interpolated across those settings.}
+  \label{fig:retrieval-grid}
+\end{figure}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.95\linewidth]{out/dna_probe_sweep_modeltree/temp_top_p_modeltree_curves_probe_metrics.png}
+  \caption{Pairwise-SVM accuracy on the shared 77-model cohort. Each panel fixes
+  top-$p$ and compares the labeled linear and RBF-SVM lines across temperature.
+  Each point tests the displayed run after training on all other retained runs.
+  Accuracy equals balanced accuracy here because the test pairs are sampled
+  with equal positive and negative counts.}
+  \label{fig:svm-grid}
+\end{figure}
+
+\section{Reproducibility and limitations}
+The evaluation implementation is in
+\texttt{scripts/evaluate\_dna\_probe\_sweep.py}; model-tree export is in
+\texttt{scripts/export\_hf\_model\_tree.py}.  Machine-readable summaries and
+predictions are stored under \texttt{out/dna\_probe\_sweep\_modeltree}.
+Random projection, negative sampling, and SVM fitting all use seed 42.
+
+The main limitations of the interim experiment are the incomplete decoding
+grid, the provisional 80-model inclusion threshold, one repeat per included
+cell, test-set downsampling, transitive model-tree labels, and model-family
+overlap between training and testing. The historical reference gallery also
+lacks recorded decoding parameters, so the temperature curve measures mismatch
+to that particular gallery rather than a clean causal temperature effect. The
+fixed cohort removes unequal coverage as a comparison confound but reduces the
+population from 100 to 77 models.
+
+This table is therefore retained as a legacy diagnostic, not the primary
+experiment. The revised protocol uses a predeclared 300-model cohort, four
+independent generation seeds, explicit repeat galleries, full-natural-
+prevalence verification, multiclass SVMs on the full DNA vector, and bounded
+unknown-temperature evaluation. Its executable specification is
+\texttt{docs/revised\_experiment\_protocol.md}.
+
+\end{document}
