@@ -19,6 +19,7 @@ COHORT_MANIFEST = (
     / "top_p_control_t05_t05_p06_r2"
     / "manifest.json"
 )
+COHORT_CONFIG = ROOT / "configs" / "rand_chinese_validated100_latest.jsonl"
 REPORT_DIR = ROOT / "reports"
 
 TEMPERATURES = (0.0, 0.2, 0.3, 0.5, 0.7)
@@ -28,12 +29,19 @@ GENERATION_SEEDS = {1: 42001, 2: 42002}
 
 
 def load_cohort() -> set[str]:
-    manifest = json.loads(COHORT_MANIFEST.read_text(encoding="utf-8"))
-    models = {
-        str(task["model_id"])
-        for task in manifest.get("tasks", [])
-        if task.get("model_id")
-    }
+    if COHORT_MANIFEST.exists():
+        manifest = json.loads(COHORT_MANIFEST.read_text(encoding="utf-8"))
+        models = {
+            str(task["model_id"])
+            for task in manifest.get("tasks", [])
+            if task.get("model_id")
+        }
+    else:
+        models = {
+            str(json.loads(line)["model_id"])
+            for line in COHORT_CONFIG.read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        }
     if len(models) != 100:
         raise ValueError(f"Expected 100 fixed models, found {len(models)}")
     return models
@@ -143,7 +151,11 @@ def collect_runs(
             manifest_path.parent / "status.jsonl"
         ).items():
             if model_id in cohort:
-                run["final"][model_id] = status
+                # A valid success from a targeted recovery satisfies the slot
+                # even if another matching historical run ended in failure.
+                previous = run["final"].get(model_id)
+                if previous != "success" or status == "success":
+                    run["final"][model_id] = status
     return runs, ignored
 
 
