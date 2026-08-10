@@ -124,9 +124,14 @@ def parse_arguments(argv: Optional[Iterable[str]] = None) -> argparse.Namespace:
         choices=["sum", "max", "mean", "concat"],
     )
     parser.add_argument("--max-length", type=int, default=1024)
+    parser.add_argument("--temperature", type=float, default=0.0)
+    parser.add_argument("--top-p", type=float, default=1.0)
+    parser.add_argument("--do-sample", action="store_true", default=False)
+    parser.add_argument("--no-do-sample", dest="do_sample", action="store_false")
 
     # Output
     parser.add_argument("--output-dir", type=Path, default=Path("./out"))
+    parser.add_argument("--output-suffix", type=str, default="")
     parser.add_argument(
         "--output-path",
         type=Path,
@@ -172,10 +177,27 @@ def parse_arguments(argv: Optional[Iterable[str]] = None) -> argparse.Namespace:
     )
     parser.add_argument("--random-seed", type=int, default=42)
     parser.add_argument(
+        "--generation-seed",
+        type=int,
+        default=None,
+        help="Response-sampling seed, independent of probe/reduction random seed.",
+    )
+    parser.add_argument(
         "--use-chat-template",
         action="store_true",
         default=False,
         help="Apply chat template for HuggingFace models (default: disabled).",
+    )
+    parser.add_argument(
+        "--try-vllm",
+        action="store_true",
+        default=False,
+        help="Try vLLM first for decoder-only HuggingFace models.",
+    )
+    parser.add_argument(
+        "--ignore-response-cache",
+        action="store_true",
+        help="Regenerate responses instead of reusing responses.json.",
     )
 
     return parser.parse_args(list(argv) if argv is not None else None)
@@ -219,6 +241,7 @@ def main(argv: Optional[Iterable[str]] = None) -> int:
             max_length=args.max_length,
             output_dir=args.output_dir,
             output_path=None,
+            output_suffix=args.output_suffix,
             save=not args.no_save,
             load_in_8bit=args.load_in_8bit,
             load_in_4bit=args.load_in_4bit,
@@ -230,7 +253,13 @@ def main(argv: Optional[Iterable[str]] = None) -> int:
             gpu_id=None,
             log_level=args.log_level,
             random_seed=args.random_seed,
+            generation_seed=args.generation_seed,
+            temperature=args.temperature,
+            do_sample=args.do_sample,
+            top_p=args.top_p,
             use_chat_template=args.use_chat_template,
+            try_vllm=args.try_vllm,
+            use_response_cache=not args.ignore_response_cache,
         )
         try:
             results = calc_dna_parallel(
@@ -274,6 +303,7 @@ def main(argv: Optional[Iterable[str]] = None) -> int:
                 max_length=args.max_length,
                 output_dir=args.output_dir,
                 output_path=args.output_path if single_model_run else None,
+                output_suffix=args.output_suffix,
                 save=not args.no_save,
                 load_in_8bit=args.load_in_8bit,
                 load_in_4bit=args.load_in_4bit,
@@ -285,7 +315,13 @@ def main(argv: Optional[Iterable[str]] = None) -> int:
                 gpu_id=gpu_id,
                 log_level=args.log_level,
                 random_seed=args.random_seed,
+                generation_seed=args.generation_seed,
+                temperature=args.temperature,
+                do_sample=args.do_sample,
+                top_p=args.top_p,
                 use_chat_template=args.use_chat_template,
+                try_vllm=args.try_vllm,
+                use_response_cache=not args.ignore_response_cache,
             )
 
             result = calc_dna(config)

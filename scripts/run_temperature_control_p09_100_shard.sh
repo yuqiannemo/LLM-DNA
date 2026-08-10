@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Fixed-top-p temperature experiment over the exact primary 100-model cohort.
-# Temperatures run sequentially from low to high; each has four generation seeds.
+# Temperatures run sequentially from low to high; each has two generation seeds.
 
 set -euo pipefail
 
@@ -52,7 +52,7 @@ export GLOBAL_STATE="$OUTPUT_DIR/dna_global_state_${SHARD}.json"
 # Experimental variables and controls. The sweep runner preserves this order.
 export TEMPERATURES="0.2 0.3 0.5 0.7"
 export TOP_PS="0.9"
-export REPEATS="${REPEATS:-1 2 3 4}"
+export REPEATS="${REPEATS:-1 2}"
 export GENERATION_SEED_BASE="${GENERATION_SEED_BASE:-42000}"
 export INCLUDE_T00="0"
 
@@ -67,7 +67,7 @@ echo "Shard: $SHARD ($ACTUAL_MODELS models)"
 echo "Fixed top_p: $TOP_PS"
 echo "Temperatures (execution order): $TEMPERATURES"
 echo "Repeats: $REPEATS"
-echo "Generation seeds: 42001 42002 42003 42004"
+echo "Generation seeds: 42001 42002"
 echo "Output directory: $OUTPUT_DIR"
 echo "Log directory: $LOG_DIR"
 

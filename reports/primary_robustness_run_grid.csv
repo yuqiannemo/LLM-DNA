@@ -1,0 +1,27 @@
+temperature,top_p,repeat,proposed_backfill_seed,recorded_seeds,success,failed,skipped,pending_status,no_status,missing_success,started,manifest_models,cohort_overlap,sources
+0.0,1.0,r1,42001,not explicitly set or recorded,100,0,0,0,0,0,True,87,87,out/rand_chinese_temp_top_p_sweep_t00_p10_r1
+0.0,1.0,r2,42002,42002,100,0,0,0,0,0,True,100,100,out/primary_robustness_validated100_20260730/primary_grid_backfill_20260730_t00_p10_r2
+0.2,0.8,r1,42001,not explicitly set or recorded,100,0,0,0,0,0,True,87,87,out/rand_chinese_temp_top_p_sweep_t02_p08_r1
+0.2,0.8,r2,42002,not explicitly set or recorded,99,1,0,0,0,1,True,87,87,out/rand_chinese_temp_top_p_sweep_t02_p08_r2
+0.2,0.9,r1,42001,not explicitly set or recorded,100,0,0,0,0,0,True,87,87,out/rand_chinese_temp_top_p_sweep_t02_p09_r1
+0.2,0.9,r2,42002,not explicitly set or recorded,100,0,0,0,0,0,True,87,87,out/rand_chinese_temp_top_p_sweep_t02_p09_r2
+0.2,1.0,r1,42001,not explicitly set or recorded,99,1,0,0,0,1,True,87,87,out/rand_chinese_temp_top_p_sweep_t02_p10_r1
+0.2,1.0,r2,42002,not explicitly set or recorded,99,1,0,0,0,1,True,87,87,out/rand_chinese_temp_top_p_sweep_t02_p10_r2
+0.3,0.8,r1,42001,not explicitly set or recorded,100,0,0,0,0,0,True,87,87,out/rand_chinese_temp_top_p_sweep_t03_p08_r1
+0.3,0.8,r2,42002,not explicitly set or recorded,99,1,0,0,0,1,True,87,87,out/rand_chinese_temp_top_p_sweep_t03_p08_r2
+0.3,0.9,r1,42001,not explicitly set or recorded,96,4,0,0,0,4,True,87,87,out/rand_chinese_temp_top_p_sweep_t03_p09_r1
+0.3,0.9,r2,42002,not explicitly set or recorded,93,7,0,0,0,7,True,87,87,out/rand_chinese_temp_top_p_sweep_t03_p09_r2
+0.3,1.0,r1,42001,not explicitly set or recorded,94,6,0,0,0,6,True,87,87,out/rand_chinese_temp_top_p_sweep_t03_p10_r1
+0.3,1.0,r2,42002,not explicitly set or recorded,91,9,0,0,0,9,True,87,87,out/rand_chinese_temp_top_p_sweep_resume_t03p10r2_t03_p10_r2
+0.5,0.8,r1,42,not explicitly set or recorded,100,0,0,0,0,0,True,87,87,out/rand_chinese_temp_top_p_sweep_resume_t05_t07_t05_p08_r1
+0.5,0.8,r2,42,42,98,2,0,0,0,2,True,100,100,out/primary_robustness_validated100_20260730/primary_grid_backfill_20260730_t05_p08_r2
+0.5,0.9,r1,42,not explicitly set or recorded,98,2,0,0,0,2,True,87,87,out/rand_chinese_temp_top_p_sweep_t05_p09_r1
+0.5,0.9,r2,42,not explicitly set or recorded,98,2,0,0,0,2,True,87,87,out/rand_chinese_temp_top_p_sweep_t05_p09_r2
+0.5,1.0,r1,42,not explicitly set or recorded,98,2,0,0,0,2,True,87,87,out/rand_chinese_temp_top_p_sweep_t05_p10_r1
+0.5,1.0,r2,42,42,78,22,0,0,0,22,True,100,100,out/primary_robustness_validated100_20260730/primary_grid_backfill_20260730_t05_p10_r2
+0.7,0.8,r1,42001,not explicitly set or recorded,97,3,0,0,0,3,True,87,87,out/rand_chinese_temp_top_p_sweep_t07_p08_r1
+0.7,0.8,r2,42002,42002,99,1,0,0,0,1,True,100,100,out/primary_robustness_validated100_20260730/primary_grid_backfill_20260730_t07_p08_r2
+0.7,0.9,r1,42001,not explicitly set or recorded,99,1,0,0,0,1,True,87,87,out/rand_chinese_0p3b_7b_temp07
+0.7,0.9,r2,42002,42002,98,2,0,0,0,2,True,100,100,out/primary_robustness_validated100_20260730/primary_grid_backfill_20260730_t07_p09_r2
+0.7,1.0,r1,42001,not explicitly set or recorded,96,4,0,0,0,4,True,87,87,out/rand_chinese_temp_top_p_sweep_t07_p10_r1
+0.7,1.0,r2,42002,42002,99,1,0,0,0,1,True,100,100,out/primary_robustness_validated100_20260730/primary_grid_backfill_20260730_t07_p10_r2

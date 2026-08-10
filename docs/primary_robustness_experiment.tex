@@ -1,1029 +1,313 @@
-\documentclass[11pt,a4paper]{article}
+\documentclass[10pt,a4paper]{article}
 
-\usepackage[margin=1in]{geometry}
+\usepackage[margin=0.72in]{geometry}
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
-\usepackage{amsmath,amssymb}
 \usepackage{booktabs}
 \usepackage{graphicx}
-\usepackage{longtable}
-\usepackage{multirow}
 \usepackage{xcolor}
 \usepackage{hyperref}
-\usepackage{listings}
 \usepackage{enumitem}
+\usepackage{array}
 
 \hypersetup{hidelinks}
-\lstset{
-  basicstyle=\ttfamily\small,
-  breaklines=true,
-  frame=single,
-  columns=fullflexible,
-  keepspaces=true
-}
+\setlist{nosep,leftmargin=*}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt}
+\renewcommand{\arraystretch}{1.08}
+\newcommand{\demo}[1]{\textcolor{blue!65!black}{#1\textsuperscript{*}}}
+\newcommand{\pending}{\textcolor{gray}{--}}
 
-\newcommand{\todoresult}{\textcolor{gray}{\textit{Not yet available}}}
-\newcommand{\method}[1]{\texttt{#1}}
-
-\title{Primary LLM-DNA Robustness Experiment\\
-\large Prospective Experimental Protocol and Report Template}
+\title{\vspace{-1.4cm}LLM-DNA Robustness Experiment\\
+\large Five-Page Progress Brief}
 \author{}
-\date{July 24, 2026}
+\date{Updated July 30, 2026}
 
 \begin{document}
 \maketitle
+\vspace{-0.8cm}
 
-\begin{abstract}
-This document records the prospective design of the primary LLM-DNA decoding
-robustness experiment before generation and evaluation are complete. The study
-will measure how temperature and top-$p$ affect exact-model identification,
-whether a classifier can mitigate the resulting accuracy loss, and whether a
-multi-sample distributional representation improves robustness under a matched
-generation budget. The revised primary cohort contains 100 models selected
-without using evaluation performance. The experiment contains one deterministic
-condition and a complete $4\times3$ stochastic decoding grid, with four
-independent generation repeats per condition. The principal deployment setting
-assumes that temperature and top-$p$ are hidden at inference time and only an
-upper bound on temperature is known. No experimental result is claimed in the
-primary report; all primary result fields are explicitly marked as pending.
-Small-scale exploratory demonstrations using previously generated artifacts are
-reported separately and are not substitutes for the preregistered experiment.
-\end{abstract}
+\section{What changed and what matters}
 
-\section{Status and scope}
+\begin{quote}
+\textbf{Main finding.} The current 84-model exploratory evidence does not
+support the simple claim that higher temperature always reduces model-detection
+performance. Instead, temperature and top-$p$ interact: increasing $T$ from
+0.2 to 0.3 improved performance at $p=0.8$, made little detectable difference
+at $p=0.9$, and substantially reduced performance at $p=1.0$.
+\end{quote}
 
-\begin{center}
-\fbox{\parbox{0.92\linewidth}{
-\textbf{Primary experiment status: not yet run.} The cohort file, launch
-scripts, evaluation scripts, statistical outputs, and reporting plan have been
-prepared. Numerical entries and figures in the primary Results section are
-placeholders. Section~\ref{sec:small-demo} contains explicitly labelled
-small-scale demonstrations from existing artifacts; they must not be
-interpreted as primary findings.
-}}
-\end{center}
-
-Before generation began, a resource-feasibility review on July 24, 2026
-reduced the planned cohort from 300 to 100 models. The decoding grid, four
-independent repeats, train/test separation, prompts, and analysis plan remain
-unchanged. Accordingly, exact identification is now a 100-way closed-set task,
-and conclusions will be limited to the revised fixed cohort.
-
-This experiment replaces the 77-model interim analysis as the primary
-robustness study. The earlier analysis remains a legacy diagnostic because it
-used an incomplete sweep, one generation repeat per reported cell, an
-historical reference gallery with unknown decoding parameters, and a binary
-same-or-related task that was not directly comparable to exact-model Top-1
-retrieval.
-
-\section{Research questions and hypotheses}
-
-\subsection{Primary research questions}
-
-\begin{enumerate}[label=\textbf{RQ\arabic*.}]
-  \item How do temperature and top-$p$ affect exact-model classification from
-        LLM-DNA representations?
-  \item On the same exact-model task, can a classifier trained on the full DNA
-        vector reduce the accuracy degradation relative to cosine retrieval?
-  \item Does the proposed multi-sample distributional representation improve
-        robustness beyond original DNA under the same response and token
-        budget?
-  \item If temperature and top-$p$ are unknown at inference time, but
-        temperature is known to satisfy $T\leq\tau$, what average and
-        worst-setting accuracy can be expected?
-\end{enumerate}
-
-\subsection{Secondary research questions}
-
-\begin{enumerate}[label=\textbf{SRQ\arabic*.}]
-  \item When exact identification fails, does the predicted model remain close
-        to the true model in the Hugging Face model tree?
-  \item Do direct parent--child, indirect, and disconnected model pairs exhibit
-        different DNA-distance distributions as decoding stochasticity rises?
-  \item How sensitive are the conclusions to response encoder, truncation,
-        projection dimension, projection seed, and the number of response
-        samples?
-\end{enumerate}
-
-The main hypothesis is that temperature will cause a larger reduction in exact
-classification accuracy than top-$p$ over the planned range. Classifier and
-distributional-method benefits will be judged by paired accuracy differences
-and by a shallower degradation curve, rather than by comparing accuracies from
-different tasks.
-
-\section{Model cohort}
-
-\subsection{Selection rule}
-
-The planned cohort contains 100 Hugging Face models. It was selected from 470
-eligible models with valid unsuffixed reference DNA artifacts and recorded
-parameter counts between 0.3 and 7.5 billion. Selection used seeded round-robin
-sampling over architecture $\times$ logarithmic parameter-size strata. It did
-not use retrieval accuracy, SVM accuracy, response quality, or any other test
-outcome. Before launching the primary grid, one selected model that repeatedly
-returned empty responses in the pilot control run was replaced with a
-similar-size model whose cached baseline run contained 100 non-empty responses.
-This reliability replacement was documented in advance and did not use
-evaluation accuracy.
-
-The fixed artifacts are:
+\textbf{Changes from the previous report}
 
 \begin{itemize}
-  \item cohort: \path{configs/rand_chinese_stratified_100.jsonl};
-  \item cohort audit: \path{configs/rand_chinese_stratified_100_audit.json};
-  \item hardware shards:
-        \path{configs/rand_chinese_stratified_100_rtx3090.jsonl} and
-        \path{configs/rand_chinese_stratified_100_a100.jsonl};
-  \item shard audit:
-        \path{configs/rand_chinese_stratified_100_shards_audit.json};
-  \item selection seed: 42; and
-  \item cohort SHA-256:
-        \texttt{19b7c7b554af4e98edeb3ab279f52ccae66a9bddbff81c0c15f2fb464e895e6e}.
+  \item The primary cohort is now the fixed validated-100 cohort.
+  \item The plan was reduced from four to two generation rounds per condition:
+        repeat 1 is the reference/training split and repeat 2 is held out.
+  \item The workload is now 13 conditions $\times$ 2 rounds $\times$ 100
+        models $=2{,}600$ successful artifacts, rather than 5,200.
+  \item The report now includes the live grid, exploratory values in the main
+        result tables, direct answers to the research questions, and a dated
+        completion forecast.
 \end{itemize}
 
-The audit file records the eligible population, selection method, selected
-model IDs, architecture and size metadata, exclusions, and output hash. The
-cohort must not be changed in response to preliminary performance. Any further
-operational replacement must be justified by a generation failure, matched as
-closely as practical on parameter size, recorded in the audit, and fixed before
-the affected run is launched.
+\textbf{Current status (July 30, 18:16 Singapore time).}
+The live audit contains \textbf{1,352/2,600 successful artifacts (52.0\%)},
+leaving 1,248. A four-GPU backfill on GPUs 0, 1, 2, and 4 is active and has
+added 39 successes since its July 30 restart. No primary accuracy claim will
+be made until both rounds are complete on a common cohort.
 
-\subsection{Completion requirement}
-
-The intended final analysis uses all 100 models. The automated primary analysis
-will refuse to run if fewer than 80 models are common to all required training
-and test runs. Missing models should first be backfilled. If the final common
-cohort remains below 100, the report will provide success rates and failure
-reasons by decoding cell and compare retained and excluded models by size and
-architecture.
-
-\section{Prompt set and DNA construction}
-
-Every model receives the same 100 synthetic classical-Chinese prompts from
-\path{data/rand/rand_dataset_chinese.json}. The prompt construction and random
-projection seed remain fixed at 42 for every model, setting, and repeat.
-
-For the original representation, each response is encoded using
-\method{all-mpnet-base-v2}. The 100 response embeddings are concatenated and
-mapped to a 128-dimensional DNA vector by a seeded Gaussian random projection.
-The current maximum response length is 1024 generated tokens. The saved
-metadata records at least the model ID, dataset, prompt count, temperature,
-top-$p$, sampling flag, generation seed, maximum length, projection seed,
-encoder, and DNA dimension.
-
-Because the sentence encoder is primarily English-oriented and truncates long
-inputs, the final study will additionally report response-length and encoder
-token-length distributions, the fraction exceeding the encoder limit, and a
-sensitivity analysis with a Chinese or multilingual response encoder.
-
-\section{Decoding design}
-
-\subsection{Factorial grid}
-
-The deterministic condition is
-\[
-  T=0, \qquad \text{sampling disabled}, \qquad p=1.0\text{ (recorded only)}.
-\]
-Top-$p$ is inactive when sampling is disabled; consequently, $T=0$ appears once
-and is not repeated as three nominal top-$p$ cells.
-
-For stochastic decoding, the complete grid is
-\[
-  T\in\{0.2,0.3,0.5,0.7\}, \qquad
-  p\in\{0.8,0.9,1.0\}.
-\]
-This gives 13 decoding conditions in total. Four independent generation
-repeats are planned for every condition, giving 52 run cells and
-\[
-  100\ \text{models}\times13\ \text{conditions}\times4\ \text{repeats}
-  =5{,}200
-\]
-model-level extraction tasks before retries.
-
-\subsection{Independent repeats and seeds}
-
-The response-sampling seeds are:
-
-\begin{table}[ht]
+\begin{table}[h]
 \centering
-\caption{Generation-repeat assignment. The projection seed remains 42 in all rows.}
-\label{tab:repeat-assignment}
-\begin{tabular}{ccc}
+\small
+\caption{Current answers to the research questions.}
+\begin{tabular}{p{0.08\linewidth}p{0.58\linewidth}p{0.25\linewidth}}
 \toprule
-Repeat & Generation seed & Primary role \\
+RQ & Current answer & Confidence \\
 \midrule
-1 & 42001 & training and reference gallery \\
-2 & 42002 & training and reference gallery \\
-3 & 42003 & held-out test query \\
-4 & 42004 & held-out test query \\
+RQ1 & Temperature cannot be interpreted independently of top-$p$. &
+Limited 84-model evidence \\
+RQ2 & Linear and RBF SVMs improve equal-cell Top-1 over cosine on identical
+queries. & Paired exploratory CIs are positive \\
+RQ3 & The proposed distributional advantage is not yet tested fairly on the
+84-model cohort. & Inconclusive \\
+RQ4 & Linear SVM has the best mixed accuracy; RBF has the best worst-cell
+accuracy at $\tau=0.3$. & Limited 84-model evidence \\
 \bottomrule
 \end{tabular}
 \end{table}
-
-No response, DNA vector, or repeat may appear in both the training/reference
-split and the held-out query split. Generation seed and projection seed are
-stored separately so that response variability is not confounded with a change
-in the random projection.
-
-\section{Primary exact-model task}
-
-Let $\mathcal{M}$ be the fixed common model cohort. Given a query DNA vector
-$\mathbf{d}_{m,s,r}$ generated by model $m$, decoding setting $s=(T,p)$, and
-held-out repeat $r\in\{3,4\}$ (that is, $r$ is either repeat 3 or repeat 4 in
-Table~\ref{tab:repeat-assignment}), each method evaluates every candidate
-$j\in\mathcal{M}$. Let $\mathcal{D}^{\mathrm{train}}_j$ denote the set of
-training DNA vectors available for candidate model $j$. Its gallery centroid is
-\[
-  \boldsymbol{\mu}_j
-  =\frac{1}{|\mathcal{D}^{\mathrm{train}}_j|}
-   \sum_{\mathbf{x}\in\mathcal{D}^{\mathrm{train}}_j}\mathbf{x}.
-\]
-The standard cosine similarity and cosine distance both take the query and the
-candidate centroid as inputs:
-\[
-  S_{\mathrm{cos}}(\mathbf{d},\boldsymbol{\mu}_j)
-  =\frac{\mathbf{d}^{\mathsf T}\boldsymbol{\mu}_j}
-        {\lVert\mathbf{d}\rVert_2\lVert\boldsymbol{\mu}_j\rVert_2},
-  \qquad
-  D_{\mathrm{cos}}(\mathbf{d},\boldsymbol{\mu}_j)
-  =1-S_{\mathrm{cos}}(\mathbf{d},\boldsymbol{\mu}_j).
-\]
-Thus, the cosine rule may be written equivalently as
-\[
-  \widehat{m}^{(\mathrm{cos})}
-  =\arg\min_{j\in\mathcal{M}}
-     D_{\mathrm{cos}}(\mathbf{d}_{m,s,r},\boldsymbol{\mu}_j)
-  =\arg\max_{j\in\mathcal{M}}
-     S_{\mathrm{cos}}(\mathbf{d}_{m,s,r},\boldsymbol{\mu}_j).
-\]
-No square is applied in the standard cosine distance used by the evaluation
-code; each Euclidean norm already satisfies
-$\lVert\mathbf{d}\rVert_2=(\sum_k d_k^2)^{1/2}$, but the cosine value itself is
-not squared. The squared norm appearing below belongs instead to the RBF kernel.
-For the SVM rules, the explicit class-$j$ decision scores and predictions are
-\[
-  f_j^{(a)}(\mathbf{d})=
-  \begin{cases}
-    \mathbf{w}_j^{\mathsf T}\mathbf{z}(\mathbf{d})+b_j,
-      & a=\mathrm{lin},\\[4pt]
-    \displaystyle
-    \sum_{i=1}^{n_{\mathrm{SV}}}\alpha_{ij}
-      \exp\!\left(
-        -\gamma\lVert\mathbf{z}(\mathbf{d})-\mathbf{z}(\mathbf{x}_i)\rVert_2^2
-      \right)+b_j,
-      & a=\mathrm{rbf}.
-  \end{cases}
-  \qquad
-  \widehat{m}^{(a)}
-  =\arg\max_{j\in\mathcal{M}}f_j^{(a)}(\mathbf{d}_{m,s,r}),
-  \quad a\in\{\mathrm{lin},\mathrm{rbf}\}.
-\]
-Here $\mathbf{z}(\cdot)$ is the feature-wise standardization learned from the
-training split, $(\mathbf{w}_j,b_j)$ are the linear-SVM parameters, and
-$\{\mathbf{x}_i,\alpha_{ij}\}_{i=1}^{n_{\mathrm{SV}}}$ and $\gamma$ are the
-RBF-SVM support vectors, effective class-$j$ coefficients, and kernel
-bandwidth parameter, respectively. The prediction is correct only if
-$\widehat{m}^{(a)}=m$. Thus, cosine and SVM methods
-are evaluated on identical multiclass labels, queries, and candidate sets.
-
-\subsection{Methods}
-
-\begin{table}[ht]
-\centering
-\caption{Planned representation $\times$ classifier comparison.}
-\label{tab:method-matrix}
-\begin{tabular}{lll}
-\toprule
-Representation & Decision rule & Purpose \\
-\midrule
-Original 128-D DNA & cosine nearest centroid & primary retrieval baseline \\
-Original 128-D DNA & multiclass linear SVM & classifier-only ablation \\
-Original 128-D DNA & multiclass RBF SVM & nonlinear classifier ablation \\
-Multi-sample mean DNA & cosine nearest centroid & matched-budget averaging baseline \\
-Distributional DNA & exact RBF-MMD & proposed representation \\
-Distributional DNA & multiclass SVM & full proposed method, if applicable \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-The linear and RBF SVMs consume the full 128-dimensional DNA vector. The legacy
-linear SVM using only negative cosine distance is not considered an exact-model
-classification improvement because a monotone linear transformation of cosine
-distance cannot alter closed-set candidate ranking. It remains only a binary
-verification baseline.
-
-\subsection{Known-setting descriptive evaluation}
-
-For each held-out condition $(T,p)$ and each method $a$, the experiment reports
-\[
-  A_a(T,p)=\frac{1}{|\mathcal{Q}_{T,p}|}
-  \sum_{q\in\mathcal{Q}_{T,p}}\mathbb{I}[\widehat{m}_{a,q}=m_q].
-\]
-Top-1 is primary; Top-3, Top-5, and mean reciprocal rank (MRR) are secondary.
-The change from the deterministic condition is
-\[
-  \Delta A_a(T,p)=A_a(T,p)-A_a(0).
-\]
-All per-setting comparisons will use the same held-out model queries.
-
-\section{Unknown-temperature bounded deployment}
-
-The main deployment scenario assumes that the exact decoding parameters are
-not provided to the classifier. For a temperature bound
-\[
-  \tau\in\{0.2,0.3,0.5,0.7\},
-\]
-one classifier is trained using pooled repeats 1--2 from every allowed setting
-with $T\leq\tau$. Temperature and top-$p$ are omitted from its features. It is
-then evaluated on held-out repeats 3--4 from all allowed settings.
-
-To avoid overweighting temperatures that happen to have more nominal cells,
-repeats are first averaged within each $(T,p)$ cell. The primary mixed accuracy
-is the equal-cell mean
-\[
-  A_a^{\mathrm{mix}}(\tau)
-  =\frac{1}{|\mathcal{S}_\tau|}
-   \sum_{s\in\mathcal{S}_\tau} A_a(s),
-  \qquad
-  \mathcal{S}_\tau=\{(T,p):T\leq\tau\}.
-\]
-The robustness guarantee is summarized by the worst observed setting
-\[
-  A_a^{\mathrm{worst}}(\tau)
-  =\min_{s\in\mathcal{S}_\tau} A_a(s).
-\]
-These quantities directly answer how accurately the system performs when the
-decoding setting is hidden but its temperature is bounded.
-
-\section{Distributional and matched-budget evaluation}
-
-The distributional method operates on repeated response samples rather than a
-single point estimate. It will be compared against both a single-sample cosine
-baseline and a matched-budget mean/centroid baseline. Every method comparison
-must use the same number of response samples, prompts, and total generated-token
-budget unless the budget difference is explicitly plotted.
-
-The planned sample-budget ablation is
-\[
-  K\in\{1,2,4,8\},
-\]
-subject to the number of available independent responses. For each $K$, the
-report will include accuracy, generated tokens, reference storage, and analysis
-time. This distinguishes gains due to the representation from gains obtained
-merely by consuming more samples.
-
-\section{Secondary verification and tree-aware analysis}
-
-\subsection{Binary verification}
-
-If binary pairwise verification is reported, its tasks are separated into:
-
-\begin{enumerate}
-  \item exact same-model versus unrelated;
-  \item lineage-only (off-diagonal related) versus unrelated; and
-  \item the legacy same-or-related versus unrelated task.
-\end{enumerate}
-
-Training may downsample negative pairs or use class weighting. Testing uses all
-available pairs at their natural prevalence. The main binary metrics are
-precision--recall AUC, precision, recall, specificity, Matthews correlation
-coefficient, false positives per query, and ROC-AUC. Balanced-test accuracy may
-be shown only as an explicitly labelled diagnostic.
-
-\subsection{Model-tree distance}
-
-The Hugging Face relation exporter stores direct base-model edges in addition
-to connected components. Using the undirected direct-edge graph, the shortest
-tree distance is
-\[
-  d_{\mathrm{tree}}(i,j)=
-  \begin{cases}
-    0, & i=j,\\
-    1, & i\text{ and }j\text{ share a direct edge},\\
-    2,3,\ldots, & \text{connected by the corresponding number of edges},\\
-    \infty, & \text{disconnected}.
-  \end{cases}
-\]
-
-The final report will show DNA-distance distributions for exact, direct
-one-hop, indirect two-hop, indirect three-or-more-hop, same-component with
-unknown hop distance, and disconnected pairs. For Top-1 predictions, cumulative
-tree-aware accuracy will be reported as exact, within one hop, within two hops,
-and within the same connected component. This analysis describes error severity
-and does not replace exact-model accuracy as the primary endpoint.
-
-\section{Statistical analysis plan}
-
-\subsection{Uncertainty}
-
-Every accuracy and MRR estimate will include a 95\% confidence interval.
-Resampling will preserve dependence among observations:
-
-\begin{itemize}
-  \item model IDs are resampled as clusters across methods and settings;
-  \item generation repeat is treated as a higher-level resampling unit when
-        sufficient repeats are available; and
-  \item tree-related analyses use model-tree component clusters where relevant.
-\end{itemize}
-
-Pair-level observations sharing a query model, reference model, or tree
-component will not be treated as independent Bernoulli trials.
-
-\subsection{Paired comparisons}
-
-Method differences are computed on identical held-out queries. The principal
-quantity is
-\[
-  \delta_{a,b}(T,p)=A_a(T,p)-A_b(T,p),
-\]
-with a paired cluster-bootstrap confidence interval. The analysis will also
-test whether a method changes the temperature degradation slope, for example
-with a mixed-effects logistic model of the form
-\[
-  \operatorname{logit}\Pr(\mathrm{correct})
-  =\beta_0+\beta_1 T+\beta_2 p+\beta_3\mathrm{method}
-   +\beta_4(T\times\mathrm{method})
-   +\beta_5(p\times\mathrm{method})+u_{\mathrm{model}}+u_{\mathrm{repeat}}.
-\]
-The interaction terms, rather than isolated cell differences, address whether
-a method mitigates robustness loss.
-
-\subsection{Multiplicity and exploratory analyses}
-
-Top-1 accuracy and bounded mixed accuracy are primary endpoints. Top-3, Top-5,
-MRR, tree-aware accuracy, encoder ablations, and projection ablations are
-secondary. Any unplanned subgroup or hyperparameter analysis will be labelled
-exploratory. If many method-by-setting significance tests are presented, a
-false-discovery-rate correction will be applied.
-
-\section{Ablations and validity checks}
-
-The following checks are planned where artifacts and compute permit:
-
-\begin{enumerate}
-  \item projection dimensions $\{64,128,256,512\}$ and at least five projection
-        seeds;
-  \item an unprojected or prompt-level distance baseline;
-  \item prompt bootstrap and split-half reliability;
-  \item response encoder comparison including a Chinese or multilingual
-        encoder;
-  \item response-token and encoder-token length distributions and truncation
-        rates by setting;
-  \item fixed $T=0$ gallery, same-setting repeat gallery, and multi-setting
-        centroid gallery;
-  \item leave-one-setting-out evaluation for unseen decoding configurations;
-  \item performance by model size, architecture, and chat/base status; and
-  \item failure probability by model attributes and decoding setting.
-\end{enumerate}
 
 \clearpage
-\section{Small-scale demonstration report using existing artifacts}
-\label{sec:small-demo}
+\section{Important exploratory findings}
 
-\subsection{Scope and split}
+The following results use the same 84 availability-selected models, repeat 1
+for pooled reference/training construction, and repeat 2 for held-out testing.
+They are pipeline-scale evidence, not final validated-100 results.
 
-To check that the analyses in Sections 6--11 are executable before the primary
-sweep is complete, small exploratory demonstrations were run on July 23, 2026,
-using only artifacts already present under \path{out/rand_chinese}. No new model
-responses were generated. Repeat 1 was used for training/reference data and
-repeat 2 for testing. Six complete stochastic cells were available:
-\[
-  T\in\{0.2,0.3\},\qquad p\in\{0.8,0.9,1.0\}.
-\]
-The $T=0.5$ and $T=0.7$ cells were excluded because they did not have a
-sufficiently complete independent-repeat split. These demonstrations use
-convenience cohorts determined by artifact availability, not the fixed
-100-model primary cohort. They are therefore pipeline checks and exploratory
-effect estimates only.
-
-\subsection{Executive summary}
-
-\noindent\fbox{\parbox{0.94\linewidth}{
-\textbf{Demo outcome.} The available artifacts support an end-to-end
-demonstration of exact classification, bounded unknown-temperature evaluation,
-paired model-cluster uncertainty, exact-only binary verification, a limited
-distributional comparison, a limited tree-aware analysis, and a gallery
-sensitivity check. Across the six complete cells, the pooled linear SVM had the
-highest equal-cell Top-1 (0.722), followed by RBF SVM (0.688) and cosine
-retrieval (0.621). The hardest observed cell was $(T,p)=(0.3,1.0)$. These are
-exploratory results from availability-selected cohorts and must not be read as
-the outcome of the 100-model primary experiment.
-}}
-
-\medskip
-Table~\ref{tab:demo-coverage} maps each planned protocol component to what
-could actually be demonstrated. ``Partial'' means that the code path ran but
-the available cohort or repeat structure could not exercise the full planned
-analysis.
-
-\begin{table}[htbp]
+\begin{table}[h]
 \centering
-\caption{Coverage of Sections 6--11 by the small-scale demonstration.}
-\label{tab:demo-coverage}
-\begin{tabular}{p{0.13\linewidth}p{0.35\linewidth}p{0.23\linewidth}p{0.15\linewidth}}
+\small
+\caption{Held-out exact-model Top-1. Asterisks denote exploratory results.}
+\begin{tabular}{ccrrrr}
 \toprule
-Protocol section & Demonstrated analysis & Available scale & Status \\
+$T$ & Top-$p$ & Cosine & Linear SVM & RBF SVM & Proposed \\
 \midrule
-6: Exact task
-  & Cosine centroid, linear SVM, and RBF SVM on identical queries
-  & Six cells; 84 common models & Complete demo \\
-7: Bounded deployment
-  & Equal-cell mixed and worst-setting accuracy for $\tau=0.2,0.3$
-  & 89 and 84 models & Complete demo \\
-8: Distributional
-  & Single cosine, mean cosine, and exact RBF-MMD
-  & Eight models; 20 prompts; at most two repeats & Partial \\
-9: Verification
-  & Exact-only linear probe at natural pair prevalence
-  & 95 models; 9,025 pairs per direction & Complete demo \\
-9: Tree-aware
-  & Exact versus disconnected error and distance summaries
-  & 95 models; no related pairs & Partial \\
-10: Statistics
-  & Model-cluster CIs and paired method differences
-  & One held-out repeat per cell & Partial \\
-11: Validity
-  & Fixed-$T=0$ versus pooled-gallery diagnostic
-  & 86 versus 84 models & Partial \\
+0.2 & 0.8 & \demo{0.643} & \demo{0.821} & \demo{0.702} & \pending \\
+0.2 & 0.9 & \demo{0.726} & \demo{0.845} & \demo{0.762} & \pending \\
+0.2 & 1.0 & \demo{0.595} & \demo{0.643} & \demo{0.643} & \pending \\
+0.3 & 0.8 & \demo{0.774} & \demo{0.869} & \demo{0.857} & \pending \\
+0.3 & 0.9 & \demo{0.690} & \demo{0.786} & \demo{0.762} & \pending \\
+0.3 & 1.0 & \demo{0.298} & \demo{0.369} & \demo{0.405} & \pending \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{Exact classification and bounded deployment demo}
+\textbf{Temperature--top-$p$ interaction.}
+For cosine retrieval, increasing $T$ from 0.2 to 0.3 changed Top-1 by
+$+0.131$ at $p=0.8$ (95\% CI 0.024 to 0.238), $-0.036$ at $p=0.9$
+($-0.167$ to 0.083), and $-0.298$ at $p=1.0$ ($-0.417$ to $-0.179$).
+The two SVMs show the same qualitative pattern. The current data therefore
+support an interaction at limited scale, but not a general monotone
+temperature conclusion.
 
-For $\tau=0.2$, the common cohort contained 89 models and the training pool
-contained the three repeat-1 cells at $T=0.2$. For $\tau=0.3$, requiring all six
-cells reduced the common cohort to 84 models. The classifier was not given
-temperature or top-$p$. Table~\ref{tab:demo-per-setting} reports held-out
-repeat-2 Top-1 accuracy for the $\tau=0.3$ pooled training experiment.
-
-\begin{table}[ht]
+\begin{table}[h]
 \centering
-\caption{Exploratory held-out Top-1 accuracy with 84 common models.}
-\label{tab:demo-per-setting}
-\begin{tabular}{ccrrr}
+\small
+\caption{Temperature-agnostic bounded deployment.}
+\begin{tabular}{clrr}
 \toprule
-$T$ & Top-$p$ & Cosine & Linear SVM & RBF SVM \\
+$\tau$ & Method & Mixed Top-1 & Worst cell \\
 \midrule
-0.2 & 0.8 & 0.643 & 0.821 & 0.702 \\
-0.2 & 0.9 & 0.726 & 0.845 & 0.762 \\
-0.2 & 1.0 & 0.595 & 0.643 & 0.643 \\
-0.3 & 0.8 & 0.774 & 0.869 & 0.857 \\
-0.3 & 0.9 & 0.690 & 0.786 & 0.762 \\
-0.3 & 1.0 & 0.298 & 0.369 & 0.405 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-Figure~\ref{fig:demo-exact-heatmaps} makes the setting-level pattern explicit.
-The linear SVM led in four cells and tied in one, while the RBF SVM was highest
-at $(0.3,1.0)$. All methods dropped sharply in that cell, so the demo does not
-support a general monotone temperature effect independent of top-$p$.
-
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=\linewidth]
-  {docs/figures/small_scale_section_6_11/exact_top1_heatmaps.png}
-\caption{Exploratory exact-model Top-1 by method and decoding cell. Darker
-cells indicate higher accuracy. The equal-cell means correspond to the
-$\tau=0.3$ pooled-training experiment.}
-\label{fig:demo-exact-heatmaps}
-\end{figure}
-
-The equal-cell bounded summaries are shown in
-Table~\ref{tab:demo-bounded}. Confidence intervals resample model IDs as
-clusters across the included cells.
-
-\begin{table}[ht]
-\centering
-\caption{Exploratory bounded-deployment Top-1 summaries.}
-\label{tab:demo-bounded}
-\begin{tabular}{clrrr}
-\toprule
-$\tau$ & Method & Mixed accuracy (95\% CI) & Worst cell & Models \\
-\midrule
-0.2 & Cosine centroid & 0.596 (0.528, 0.667) & 0.562 & 89 \\
-    & Linear SVM      & 0.682 (0.614, 0.745) & 0.652 & 89 \\
-    & RBF SVM         & 0.629 (0.562, 0.700) & 0.584 & 89 \\
+0.2 & Cosine & 0.596 & 0.562 \\
+    & Linear SVM & \textbf{0.682} & \textbf{0.652} \\
+    & RBF SVM & 0.629 & 0.584 \\
 \addlinespace
-0.3 & Cosine centroid & 0.621 (0.554, 0.688) & 0.298 & 84 \\
-    & Linear SVM      & 0.722 (0.675, 0.772) & 0.369 & 84 \\
-    & RBF SVM         & 0.688 (0.633, 0.742) & 0.405 & 84 \\
+0.3 & Cosine & 0.621 & 0.298 \\
+    & Linear SVM & \textbf{0.722} & 0.369 \\
+    & RBF SVM & 0.688 & \textbf{0.405} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-On identical queries, the paired model-cluster bootstrap difference between
-linear SVM and cosine was $0.086$ (95\% CI $0.037$ to $0.135$) at
-$\tau=0.2$ and $0.101$ (95\% CI $0.058$ to $0.147$) at $\tau=0.3$. The
-corresponding RBF-SVM differences were $0.034$ (95\% CI $0.004$ to $0.071$)
-and $0.067$ (95\% CI $0.026$ to $0.111$). These intervals quantify only this
-availability-selected demo and do not test the primary hypotheses.
+On identical queries at $\tau=0.3$, linear SVM improved over cosine by 0.101
+(paired 95\% CI 0.058 to 0.147), and RBF SVM improved by 0.067
+(0.026 to 0.111). Thus classifier mitigation is the strongest finding
+currently supported, although only at exploratory scale.
 
-Figure~\ref{fig:demo-bounded-paired} combines three views that should remain
-distinct in interpretation: bounded performance, paired within-query method
-gains, and the unpaired gallery diagnostic. In particular, the fixed-gallery
-bars are not a controlled estimate of gallery effects because the gallery
-cohort and training budget differ from the pooled condition.
+\clearpage
+\section{Live generation grid}
 
-\begin{figure}[htbp]
+Each planned setting requires 200 successes: 100 models in each of two rounds.
+A dash denotes an unplanned deterministic duplicate.
+
+\begin{table}[h]
 \centering
-\includegraphics[width=\linewidth]
-  {docs/figures/small_scale_section_6_11/bounded_paired_gallery.png}
-\caption{Bounded-deployment and sensitivity summary. Panel A shows equal-cell
-mixed accuracy with model-cluster 95\% intervals and the worst observed cell.
-Panel B shows paired Top-1 differences relative to cosine. Panel C is an
-explicitly unpaired fixed-gallery versus pooled-gallery diagnostic.}
-\label{fig:demo-bounded-paired}
-\end{figure}
+\small
+\caption{Reusable successes as of July 30, 18:16.}
+\begin{tabular}{crrr}
+\toprule
+Temperature & $p=0.8$ & $p=0.9$ & $p=1.0$ \\
+\midrule
+$0$   & -- & -- & $42/200$ \\
+$0.2$ & $166/200$ & $171/200$ & $162/200$ \\
+$0.3$ & $170/200$ & $168/200$ & $161/200$ \\
+$0.5$ & $79/200$  & $85/200$  & $73/200$ \\
+$0.7$ & $1/200$   & $74/200$  & $0/200$ \\
+\bottomrule
+\end{tabular}
+\end{table}
 
-\subsection{Distributional and matched-budget demo}
-
-The exact RBF-MMD pilot ran successfully on eight lexicographically selected
-models, 20 common evaluation prompts, and two response repeats, using
-$T=0.2,p=0.8$ as the reference setting. Single-sample cosine, mean-cosine, and
-exact RBF-MMD each achieved Top-1 and MRR of 1.000 for the same-setting
-comparison and for cross-setting queries at $(0.3,0.8)$ and $(0.3,0.9)$. The
-same-setting split has only one repeat on each side, whereas the cross-setting
-comparisons pool both repeats per model on each side. This is a successful
-end-to-end demonstration, but the tiny cohort saturated all methods and
-therefore provides no evidence that the distributional representation is
-better. The available two repeats also do not support the planned
-$K\in\{1,2,4,8\}$ ablation.
-
-\begin{table}[htbp]
+\begin{table}[h]
 \centering
-\caption{Distributional pilot Top-1 (MRR was also 1.000 in every entry).}
-\label{tab:demo-distributional}
+\small
+\caption{Progress summarized by temperature.}
 \begin{tabular}{lrrr}
 \toprule
-Query comparison & Single cosine & Mean cosine & Exact RBF-MMD \\
+Condition & Required & Success & Remaining \\
 \midrule
-Same $(0.2,0.8)$ & 1.000 & 1.000 & 1.000 \\
-Cross $(0.2,0.8)\rightarrow(0.3,0.8)$ & 1.000 & 1.000 & 1.000 \\
-Cross $(0.2,0.8)\rightarrow(0.3,0.9)$ & 1.000 & 1.000 & 1.000 \\
+$T=0$ & 200 & 42 & 158 \\
+$T=0.2$, all $p$ & 600 & 499 & 101 \\
+$T=0.3$, all $p$ & 600 & 499 & 101 \\
+$T=0.5$, all $p$ & 600 & 237 & 363 \\
+$T=0.7$, all $p$ & 600 & 75 & 525 \\
+\midrule
+Total & 2,600 & 1,352 & 1,248 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-This complete saturation is itself a useful demo diagnostic: a larger and more
-difficult cohort is required before representation differences can be
-estimated. It would be inappropriate to select a method from these pilot
-numbers.
+\textbf{Execution priority.}
+Resume the deterministic control first, followed by the large $T=0.7$ gaps,
+then $T=0.5$, and finally the smaller $T=0.2/0.3$ backfills. Successful
+historical artifacts are preserved; only missing or failed model--cell--round
+keys are queued.
 
-\subsection{Binary verification and tree-aware demo}
+\textbf{What is and is not complete.}
+All 13 settings have been started, but none yet contains 100 successful models
+in both rounds. The filled accuracy values on the previous page come from a
+separate 84-model demonstration and must not be pooled with the primary
+validated-100 results.
 
-An exact-only linear verification probe was trained on one $T=0.2,p=0.8$
-repeat and tested on the other, in both directions, over 95 common models.
-Testing retained all 8,930 negative pairs per direction, giving a natural
-positive prevalence of $1/95$. Results are in
-Table~\ref{tab:demo-verification}.
-
-\begin{table}[ht]
-\centering
-\caption{Exploratory exact-only binary verification at natural prevalence.}
-\label{tab:demo-verification}
-\begin{tabular}{lrrrrrr}
-\toprule
-Test repeat & PR-AUC & ROC-AUC & Precision & Recall & Specificity & MCC \\
-\midrule
-1 & 0.334 & 0.832 & 0.049 & 0.726 & 0.851 & 0.163 \\
-2 & 0.373 & 0.869 & 0.045 & 0.747 & 0.831 & 0.155 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-Despite the apparently strong ROC-AUC, the probe produced 1,329 and 1,511
-false positives in the two directions, respectively. The resulting precision
-near 5\% demonstrates why the primary verification report emphasizes PR-AUC,
-MCC, specificity, and false positives per query rather than balanced accuracy
-alone.
-
-The tree-aware cosine demo used repeat 1 at $(0.2,0.8)$ as the gallery and 95
-common models. Exact Top-1 was 0.526 for the same-setting repeat-2 query and
-0.379 for the $(0.3,0.8)$ repeat-2 query. All 104 combined errors were between
-models disconnected in the exported relation graph, so within-one-hop,
-within-two-hop, and same-component accuracy did not exceed exact accuracy.
-Mean cosine distance was 0.445 versus 0.929 for exact and disconnected pairs
-in the same-setting comparison, and 0.566 versus 0.929 in the cross-setting
-comparison. No direct or indirect related pair occurred within this
-availability-selected cohort, so lineage-error severity could not be
-demonstrated.
-
-Figure~\ref{fig:demo-verification-tree} emphasizes two practical limitations.
-First, ROC-AUC obscures the false-positive burden when only one of 95 candidate
-pairs is positive. Second, the tree-aware demo separates exact and disconnected
-pairs but cannot validate the intended one-hop and indirect strata because no
-such pair occurred in the common cohort.
-
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=\linewidth]
-  {docs/figures/small_scale_section_6_11/verification_tree_diagnostics.png}
-\caption{Verification and tree-aware diagnostics. Panels A--B show binary
-metrics and false positives per query at natural prevalence. Panel C compares
-mean cosine distance for exact and disconnected pairs and annotates exact
-retrieval accuracy.}
-\label{fig:demo-verification-tree}
-\end{figure}
-
-\subsection{Validity-check demo and deferred items}
-
-As a limited gallery check, a fixed $T=0$ repeat-1 gallery was compared with
-the multi-setting pooled gallery on the same six query settings. Equal-cell
-mixed Top-1 with the fixed gallery was 0.403 for cosine, 0.310 for linear SVM,
-and 0.341 for RBF SVM over 86 common models. The corresponding pooled-gallery
-values were 0.621, 0.722, and 0.688 over 84 common models. Because the cohorts
-and number of training examples differ, this is a diagnostic rather than a
-paired method comparison; it merely confirms that gallery construction is
-consequential.
-
-The remaining Section 10--11 analyses were deferred. Two temperatures and one
-held-out repeat are inadequate for the planned mixed-effects degradation model.
-Alternative projection dimensions/seeds, encoder comparisons, reliable
-encoder-token truncation counts, $K=4$ and $K=8$, lineage-only verification,
-and related-pair tree strata are not supported by the currently complete
-artifacts. Leave-one-setting-out and subgroup analyses are feasible later but
-were omitted to keep this demonstration deliberately small.
-
-\subsection{Demo conclusions and primary-study handoff}
-
-The demonstration supports the following limited conclusions:
-
-\begin{itemize}
-  \item The exact-classification and bounded-deployment pipelines operate on
-        disjoint generation repeats and produce aligned per-query scores for
-        all three classifiers.
-  \item Within this demo, the linear SVM had the highest mixed Top-1 at both
-        temperature bounds, and its paired advantage over cosine was positive.
-  \item Robustness was setting-dependent: $(0.3,1.0)$ was substantially harder
-        than the other five cells for every method.
-  \item Natural-prevalence verification exposed a large operational
-        false-positive burden that ROC-AUC alone would conceal.
-  \item The distributional and tree-aware code paths run, but the present data
-        are respectively too easy and too sparse in related pairs to compare
-        the intended methods.
-  \item Gallery construction materially changes the diagnostic accuracies, so
-        the primary report must keep gallery definitions and training budgets
-        fixed in paired comparisons.
-\end{itemize}
-
-Before any primary claim is made, the study still requires the fixed 100-model
-cohort, complete repeats 1--4 for all 13 conditions, the preregistered
-repeat-1/2 versus repeat-3/4 split, $K=4$ and $K=8$ response samples, sufficient
-direct and indirect model-tree pairs, and the planned encoder/projection
-metadata. The small-scale numbers should not be copied into the pending primary
-Results tables.
-
-Machine-readable outputs are stored under
-\path{out/small_scale_section_6_11}. The exact-classification, verification,
-distributional, fixed-gallery, and tree-aware subdirectories contain the
-selected cohorts, per-query predictions where applicable, aggregate CSV files,
-and JSON summaries. The three report figures are regenerated without plotting
-library dependencies using:
-
-\begin{lstlisting}[language=bash]
-python scripts/plot_small_scale_section_6_11_demo.py
-\end{lstlisting}
+\textbf{Current execution.}
+The four-GPU backfill remains active. At the 18:20 host-side check, four model
+workers were still processing the deterministic $r1$ cell. The status journal
+preserves the 42 completed deterministic artifacts, so later restarts will not
+regenerate them.
 
 \clearpage
+\section{Revised design and the proposed method}
 
-\section{Execution and resource plan}
-
-The generation launcher is
-\path{scripts/run_primary_robustness_experiment.sh}. It uses the 100-model
-cohort, four repeats, the 13-condition grid, isolated outputs under
-\path{out/primary_robustness_100}, and isolated logs. The hardware-shard wrapper
-\path{scripts/run_primary_robustness_100_shard.sh} assigns the 23 largest
-models to the two A100 GPUs and the remaining 77 models to the RTX 3090 fleet.
-Both processes write model artifacts beneath the same experiment directory,
-but use distinct run names, logs, status journals, and global-state files to
-avoid concurrent-writer conflicts. The RTX 3090 scheduler uses up to four visible
-GPUs; the A100 scheduler uses up to two.
-
-The current 100-model $T=0.5$ top-$p$ control experiment may continue as a
-supplementary study. Its availability-selected cohort and existing artifacts
-are not substituted into the revised primary cohort. The two primary shards
-should be launched only after that control run finishes. If they share a model
-cache, cache cleanup must not evict a model still required by the other shard.
-
-Transient failures are retried and recorded. Progress reports include planned,
-successful, failed, and missing models plus failure-status counts. Missing
-cells are never represented as zero accuracy and curves are not interpolated
-through absent cells.
-
-\section{Reproducibility and provenance}
-
-The experiment will preserve:
+\textbf{Primary design}
 
 \begin{itemize}
-  \item exact cohort file and SHA-256 hash;
-  \item prompt dataset and seed;
-  \item model ID and available model metadata;
-  \item temperature, top-$p$, sampling flag, generation seed, and token limit;
-  \item response files and independent repeat suffixes;
-  \item sentence encoder, DNA dimension, projection method, and projection seed;
-  \item run manifests, status journals, failure summaries, predictions, and
-        machine-readable metric tables; and
-  \item the evaluation code and report version used to produce final figures.
+  \item Cohort: fixed validated 100 Hugging Face models.
+  \item Prompts: the same 100 classical-Chinese prompts for every model.
+  \item Conditions: $T=0$ once, plus
+        $T\in\{0.2,0.3,0.5,0.7\}\times p\in\{0.8,0.9,1.0\}$.
+  \item Split: repeat 1 is reference/training; repeat 2 is held-out query.
+  \item Primary metric: exact-model Top-1; Top-3, Top-5, and MRR are secondary.
+  \item Deployment view: decoding parameters are hidden, with only
+        $T\leq\tau$ known.
 \end{itemize}
 
-The unsuffixed historical gallery will not be used for the primary causal
-interpretation because its temperature and top-$p$ were not recorded. It may be
-retained as a clearly labelled legacy reference-sensitivity analysis.
+\textbf{Why the Proposed column is still blank.}
+The same 84 models and held-out queries can be evaluated with exact RBF-MMD at
+$K=1$. However, one reference and one query response per prompt do not test a
+multi-sample distribution: at $K=1$, MMD is effectively a kernel point
+distance. In addition, the existing eight-model pilot used character
+n-gram hashing rather than the response encoder used for the main DNA table.
+Its saturated 1.000 accuracy is therefore neither difficult nor directly
+comparable.
 
-\section{Planned results}
-
-\subsection{Cohort and completion table}
-
-\begin{table}[ht]
+\begin{table}[h]
 \centering
-\caption{Cohort completion and availability. Populate after generation.}
-\begin{tabular}{lrrrr}
+\small
+\caption{Data required for a disjoint, matched-budget distributional test.}
+\begin{tabular}{lcc}
 \toprule
-Condition & Planned & Successful & Failed & Common cohort \\
+Budget & Reference samples per prompt & Query samples per prompt \\
 \midrule
-$T=0$ & 100 & \todoresult & \todoresult & \todoresult \\
-$T=0.2$, all $p$ & 300 & \todoresult & \todoresult & \todoresult \\
-$T=0.3$, all $p$ & 300 & \todoresult & \todoresult & \todoresult \\
-$T=0.5$, all $p$ & 300 & \todoresult & \todoresult & \todoresult \\
-$T=0.7$, all $p$ & 300 & \todoresult & \todoresult & \todoresult \\
+$K=1$ & 1 & 1 \\
+$K=2$ & 2 & 2 \\
+$K=4$ & 4 & 4 \\
+$K=8$ & 8 & 8 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Counts in this table are per repeat unless stated otherwise. The final version
-will additionally report failure reasons and retained/excluded cohort
-distributions.
+\textbf{Defensible next step for the proposed method.}
+First run an explicitly labelled ``RBF-MMD, $K=1$'' analysis on the exact
+84-model cohort using the same encoder, prompts, repeat split, and queries.
+This can check the paired pipeline without new generation. A claim about the
+proposed multi-sample advantage requires additional independent responses and
+matched $K\geq2$ cosine/mean baselines; it should not be inferred from the
+current table.
 
-\subsection{Per-setting exact classification}
+\textbf{Main limitations}
 
-\begin{longtable}{ccrrrr}
-\caption{Held-out exact-model performance. Every entry will be reported with a
-95\% model-cluster confidence interval.}\label{tab:per-setting}\\
-\toprule
-$T$ & Top-$p$ & Cosine & Linear SVM & RBF SVM & Proposed \\
-\midrule
-\endfirsthead
-\toprule
-$T$ & Top-$p$ & Cosine & Linear SVM & RBF SVM & Proposed \\
-\midrule
-\endhead
-0.0 & N/A & \todoresult & \todoresult & \todoresult & \todoresult \\
-0.2 & 0.8 & \todoresult & \todoresult & \todoresult & \todoresult \\
-0.2 & 0.9 & \todoresult & \todoresult & \todoresult & \todoresult \\
-0.2 & 1.0 & \todoresult & \todoresult & \todoresult & \todoresult \\
-0.3 & 0.8 & \todoresult & \todoresult & \todoresult & \todoresult \\
-0.3 & 0.9 & \todoresult & \todoresult & \todoresult & \todoresult \\
-0.3 & 1.0 & \todoresult & \todoresult & \todoresult & \todoresult \\
-0.5 & 0.8 & \todoresult & \todoresult & \todoresult & \todoresult \\
-0.5 & 0.9 & \todoresult & \todoresult & \todoresult & \todoresult \\
-0.5 & 1.0 & \todoresult & \todoresult & \todoresult & \todoresult \\
-0.7 & 0.8 & \todoresult & \todoresult & \todoresult & \todoresult \\
-0.7 & 0.9 & \todoresult & \todoresult & \todoresult & \todoresult \\
-0.7 & 1.0 & \todoresult & \todoresult & \todoresult & \todoresult \\
-\bottomrule
-\end{longtable}
+\begin{itemize}
+  \item The exploratory cohort was selected by artifact availability.
+  \item Only $T=0.2$ and 0.3 currently have comparable held-out results.
+  \item Two rounds quantify model-level uncertainty, not variability across
+        independent generation rounds.
+  \item The shared $T=0.5$ seed-42 runs require a duplicate/independence audit.
+\end{itemize}
 
-\subsection{Bounded unknown-temperature deployment}
+\clearpage
+\section{Schedule, decisions, and next report}
 
-\begin{table}[ht]
+The latest completed four-GPU batch produced 73 successes in 12.43 hours
+(5.87 successes/hour). At that rate, 1,248 remaining artifacts require about
+213 four-GPU hours, or 8.9 days of continuous generation, before retry and
+audit allowances.
+
+\begin{table}[h]
 \centering
-\caption{Temperature-agnostic deployment results. The classifier is not given
-temperature or top-$p$.}
-\begin{tabular}{clrrr}
+\small
+\caption{Conditional completion forecast.}
+\begin{tabular}{p{0.32\linewidth}p{0.20\linewidth}p{0.38\linewidth}}
 \toprule
-$\tau$ & Method & Mixed accuracy & Worst setting & MRR \\
+Milestone & Expected & Completion criterion \\
 \midrule
-0.2 & Original cosine & \todoresult & \todoresult & \todoresult \\
-    & Linear SVM & \todoresult & \todoresult & \todoresult \\
-    & RBF SVM & \todoresult & \todoresult & \todoresult \\
-    & Proposed & \todoresult & \todoresult & \todoresult \\
-\addlinespace
-0.3 & Original cosine & \todoresult & \todoresult & \todoresult \\
-    & Linear SVM & \todoresult & \todoresult & \todoresult \\
-    & RBF SVM & \todoresult & \todoresult & \todoresult \\
-    & Proposed & \todoresult & \todoresult & \todoresult \\
-\addlinespace
-0.5 & Original cosine & \todoresult & \todoresult & \todoresult \\
-    & Linear SVM & \todoresult & \todoresult & \todoresult \\
-    & RBF SVM & \todoresult & \todoresult & \todoresult \\
-    & Proposed & \todoresult & \todoresult & \todoresult \\
-\addlinespace
-0.7 & Original cosine & \todoresult & \todoresult & \todoresult \\
-    & Linear SVM & \todoresult & \todoresult & \todoresult \\
-    & RBF SVM & \todoresult & \todoresult & \todoresult \\
-    & Proposed & \todoresult & \todoresult & \todoresult \\
+Missing/failed backfill & In progress & Four workers active on GPUs
+0, 1, 2, and 4 since July 30 \\
+Generation and retries & Aug.\ 11--12 & 2,600 admissible successes \\
+Independence/provenance audit & Aug.\ 12 & Split passes seed and duplicate checks \\
+Primary evaluation and figures & Aug.\ 13--14 & Final common-cohort outputs \\
+Revised primary report & Aug.\ 14 & Exploratory values replaced by primary results \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{Planned figures}
+\textbf{Schedule assessment.}
+August 14 remains feasible only if the active four-GPU backfill continues at
+approximately the observed throughput. Every
+additional idle day moves the forecast by at least one day. Persistent
+$T=0.7$ failures or a distinct-seed $T=0.5$ backfill would also extend it.
 
-The final report will contain:
+\textbf{Decisions for the next report}
 
 \begin{enumerate}
-  \item exact Top-1 versus temperature, faceted by top-$p$, with one curve per
-        representation/classifier and 95\% confidence bands;
-  \item accuracy loss relative to $T=0$ and estimated degradation slopes;
-  \item mixed and worst-setting accuracy versus temperature bound $\tau$;
-  \item stacked tree-aware Top-1 error severity versus temperature; and
-  \item accuracy versus response-sample/token budget for the mean and
-        distributional representations.
+  \item Report temperature effects separately by top-$p$; do not present only
+        a marginal temperature coefficient.
+  \item Treat classifier mitigation as exploratory until the validated-100
+        common cohort is complete.
+  \item Add the proposed method only under a clearly stated sample budget and
+        matched encoder/query split.
+  \item Keep the main report short; move protocol commands, manifests, and
+        extended validity checks to an appendix or repository files.
 \end{enumerate}
 
-\section{Planned interpretation}
+\textbf{Reproducibility pointers.}
+The fixed cohort is
+\path{configs/rand_chinese_validated100_latest.jsonl}; the live machine-readable
+grid is \path{reports/primary_robustness_run_grid.csv}; exploratory predictions
+are under \path{out/small_scale_section_6_11}; and the backfill log is
+\path{logs/primary_grid_resume_20260730-1235_master.log}.
 
-The final conclusions will be limited to what the completed protocol supports:
-
-\begin{itemize}
-  \item the effect of query-side decoding conditions relative to explicit,
-        independently generated galleries;
-  \item classifier mitigation on the same exact-model task;
-  \item representation gains under matched budgets; and
-  \item expected and worst observed performance when decoding parameters are
-        hidden but temperature is bounded.
-\end{itemize}
-
-No lineage-robustness conclusion will be based on aggregate positives dominated
-by same-model pairs. No method will be declared superior from a point estimate
-alone, and no causal temperature conclusion will use the historical
-unknown-setting gallery.
-
-\appendix
-
-\section{Execution commands}
-
-Build or verify the fixed cohort:
-
-\begin{lstlisting}[language=bash]
-python3 scripts/build_experiment_cohort.py --target 100 \
-  --output configs/rand_chinese_stratified_100.jsonl \
-  --audit-output configs/rand_chinese_stratified_100_audit.json
-python3 scripts/build_primary_robustness_100_shards.py
-\end{lstlisting}
-
-After the existing control run finishes, launch the two hardware shards from
-separate terminals. Each command dynamically uses the visible GPUs up to its
-stated worker cap:
-
-\begin{lstlisting}[language=bash]
-mkdir -p logs && nohup env MAX_CONCURRENT_GPUS=4 \
-  bash scripts/run_primary_robustness_100_shard.sh rtx3090 \
-  > logs/primary_robustness_100_rtx3090_master.log 2>&1 &
-
-mkdir -p logs && nohup env MAX_CONCURRENT_GPUS=2 \
-  bash scripts/run_primary_robustness_100_shard.sh a100 \
-  > logs/primary_robustness_100_a100_master.log 2>&1 &
-\end{lstlisting}
-
-Run the preregistered exact-model and tree-aware analyses after all four repeats
-are complete:
-
-\begin{lstlisting}[language=bash]
-bash scripts/run_primary_analysis.sh
-\end{lstlisting}
-
-The primary analysis outputs are written beneath
-\path{out/primary_robustness_100_analysis}. The exact-model evaluator produces
-per-setting metrics, per-query predictions, bounded-deployment tables, cohort
-metadata, and JSON summaries.
-
-\section{Implementation map}
-
-\begin{longtable}{p{0.34\linewidth}p{0.58\linewidth}}
-\toprule
-File & Purpose \\
-\midrule
-\endfirsthead
-\toprule
-File & Purpose \\
-\midrule
-\endhead
-\path{scripts/run_primary_robustness_experiment.sh}
-  & Launch the 100-model, 13-condition, four-repeat extraction sweep. \\
-\path{scripts/run_primary_robustness_100_shard.sh}
-  & Run the collision-safe RTX 3090 or A100 hardware shard. \\
-\path{scripts/build_primary_robustness_100_shards.py}
-  & Assign 77 models to RTX 3090 workers and the 23 largest models to A100
-    workers; record shard membership and hashes. \\
-\path{scripts/run_primary_analysis.sh}
-  & Construct the fixed train/test repeat split and run primary analyses. \\
-\path{scripts/evaluate_exact_dna_classification.py}
-  & Compare cosine centroids and multiclass SVMs on exact identity; produce
-    bounded unknown-temperature results and confidence intervals. \\
-\path{scripts/analyze_tree_aware_errors.py}
-  & Produce hierarchical retrieval and tree-distance error summaries. \\
-\path{scripts/evaluate_dna_probe_sweep.py}
-  & Run legacy and separated binary verification tasks using all test
-    negatives by default. \\
-\path{scripts/run_rbf_mmd_pilot.py}
-  & Compare single-sample, matched mean-cosine, and exact RBF-MMD retrieval. \\
-\path{scripts/export_hf_model_tree.py}
-  & Export direct parent/base edges and connected components. \\
-\path{scripts/report_sweep_progress.py}
-  & Report completion, missing models, and failure-status counts. \\
-\bottomrule
-\end{longtable}
+\vfill
+\begin{center}
+\textit{Primary conclusions remain pending until the validated-100 grid and
+held-out split are complete.}
+\end{center}
 
 \end{document}

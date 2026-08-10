@@ -6,6 +6,7 @@ import json
 import logging
 import os
 import queue
+import random
 import threading
 import time
 from datetime import datetime
@@ -37,6 +38,7 @@ class DNAExtractionConfig:
     max_length: int = 1024
     output_dir: Path = Path("./out")
     output_path: Optional[Path] = None
+    output_suffix: str = ""
     save: bool = True
     load_in_8bit: bool = False
     load_in_4bit: bool = False
@@ -48,7 +50,13 @@ class DNAExtractionConfig:
     gpu_id: Optional[int] = None
     log_level: str = "INFO"
     random_seed: int = 42
+    generation_seed: Optional[int] = None
+    temperature: float = 0.0
+    do_sample: bool = False
+    top_p: float = 1.0
     use_chat_template: bool = False
+    try_vllm: bool = False
+    use_response_cache: bool = True
 
 
 @dataclass(slots=True)
@@ -155,13 +163,19 @@ def _validate_quantization(config: DNAExtractionConfig) -> None:
             ) from exc
 
 
+def _safe_model_output_name(model_name: str, output_suffix: str = "") -> str:
+    return f"{model_name.replace('/', '_').replace(':', '_')}{output_suffix}"
+
+
 def _signature_output_paths(config: DNAExtractionConfig) -> tuple[Path, Path]:
     if config.output_path is not None:
         output_path = Path(config.output_path)
         summary_path = output_path.with_name(f"{output_path.stem}_summary.json")
         return output_path, summary_path
 
-    safe_model_name = config.model_name.replace("/", "_").replace(":", "_")
+    safe_model_name = _safe_model_output_name(
+        config.model_name, config.output_suffix
+    )
     dataset_identifier = config.dataset.replace(",", "_")
     structured_dir = Path(config.output_dir) / dataset_identifier / safe_model_name
     output_path = structured_dir / f"{safe_model_name}_dna.json"
@@ -284,7 +298,7 @@ def _is_api_parallel_mode(config: DNAExtractionConfig, model_names: list[str]) -
 
 
 def _response_cache_path(config: DNAExtractionConfig, model_name: str) -> Path:
-    safe_model_name = model_name.replace("/", "_").replace(":", "_")
+    safe_model_name = _safe_model_output_name(model_name, config.output_suffix)
     dataset_identifier = config.dataset.replace(",", "_")
     return Path(config.output_dir) / dataset_identifier / safe_model_name / "responses.json"
 
@@ -395,7 +409,26 @@ def _generate_responses_for_model(
         load_in_4bit=load_in_4bit,
         token=resolved_token,
         is_chat_model=model_meta.get("chat_model", {}).get("is_chat_model", False),
+        try_vllm=config.try_vllm,
     )
+
+    generation_seed = (
+        config.random_seed
+        if config.generation_seed is None
+        else config.generation_seed
+    )
+    # Reset immediately before response generation so model loading cannot
+    # consume part of the sampling stream.
+    random.seed(generation_seed)
+    np.random.seed(generation_seed)
+    try:
+        import torch
+
+        torch.manual_seed(generation_seed)
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed_all(generation_seed)
+    except ImportError:
+        pass
 
     # Set up incremental saving callback
     incremental_items: list[dict] = []
@@ -411,20 +444,31 @@ def _generate_responses_for_model(
                 "complete": len(incremental_items) >= len(probe_texts),
                 "items": incremental_items,
                 "generated_at": datetime.now().isoformat(),
+                "generation_config": {
+                    "temperature": config.temperature,
+                    "top_p": config.top_p,
+                    "do_sample": config.do_sample,
+                    "generation_seed": generation_seed,
+                    "max_length": config.max_length,
+                },
             }
             with open(incremental_save_path, "w", encoding="utf-8") as handle:
                 json.dump(payload, handle, indent=2, ensure_ascii=False)
 
     try:
         if hasattr(model, "generate_batch") and callable(getattr(model, "generate_batch")):
+            generation_kwargs = {}
+            if model.__class__.__name__ == "VLLMWrapper":
+                generation_kwargs["seed"] = generation_seed
             responses = model.generate_batch(
                 probe_texts,
                 max_length=config.max_length,
-                temperature=0.0,
-                do_sample=False,
-                top_p=1.0,
+                temperature=config.temperature,
+                do_sample=config.do_sample,
+                top_p=config.top_p,
                 use_chat_template=config.use_chat_template,
                 on_response_callback=_save_response_incrementally if incremental_save_path else None,
+                **generation_kwargs,
             )
         else:
             responses = []
@@ -432,9 +476,9 @@ def _generate_responses_for_model(
                 response = model.generate(
                     prompt,
                     max_length=config.max_length,
-                    temperature=0.0,
-                    do_sample=False,
-                    top_p=1.0,
+                    temperature=config.temperature,
+                    do_sample=config.do_sample,
+                    top_p=config.top_p,
                     use_chat_template=config.use_chat_template,
                 )
                 responses.append(response)
@@ -515,6 +559,14 @@ def _extract_signature_from_text_responses(
             "encoder_device": resolved_encoder_device,
             "max_length": config.max_length,
             "dataset": config.dataset,
+            "temperature": config.temperature,
+            "do_sample": config.do_sample,
+            "top_p": config.top_p,
+            "generation_seed": (
+                config.random_seed
+                if config.generation_seed is None
+                else config.generation_seed
+            ),
         },
         aggregation_method=config.embedding_merge,
     )
@@ -551,7 +603,11 @@ def calc_dna(config: DNAExtractionConfig) -> DNAExtractionResult:
         raise ValueError(f"Unsupported extractor_type for calc_dna: {config.extractor_type}")
 
     response_path = _response_cache_path(config, config.model_name)
-    cached_responses = _load_cached_responses(response_path, expected_count=len(probe_texts))
+    cached_responses = (
+        _load_cached_responses(response_path, expected_count=len(probe_texts))
+        if config.use_response_cache
+        else None
+    )
 
     if cached_responses is not None:
         logging.info(

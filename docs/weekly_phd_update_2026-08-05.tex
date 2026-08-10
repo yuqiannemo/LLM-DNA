@@ -1,0 +1,120 @@
+\documentclass[10pt,a4paper]{article}
+\usepackage[margin=0.68in]{geometry}
+\usepackage{booktabs,tabularx,array,xcolor,enumitem}
+\usepackage[hidelinks]{hyperref}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{4pt}
+\setlist{nosep,leftmargin=*}
+\renewcommand{\arraystretch}{1.08}
+\newcommand{\good}[1]{\textcolor{green!45!black}{#1}}
+\newcommand{\warn}[1]{\textcolor{orange!75!black}{#1}}
+
+\title{Weekly Update}
+\author{}
+\date{5 August 2026}
+
+\begin{document}
+\maketitle
+\vspace{-2.2em}
+
+\section*{What changed this week}
+
+\textbf{Grid generation finished its scheduled pass.} We now have
+\good{2,528/2,600 successful artifacts (97.2\%)} across 100 validated models,
+13 decoding settings, and two rounds. There are no ordinary pending cells and
+no experiment worker is currently active. The 72 terminal failures comprise
+52 missing-file failures and 20 empty responses; they require targeted repair,
+not another generic restart.
+
+\begin{table}[h]
+\centering
+\caption{Successful artifacts in the two-round grid (maximum 200 per cell).}
+\begin{tabular}{crrr}
+\toprule
+$T$ & $p=0.8$ & $p=0.9$ & $p=1.0$ \\
+\midrule
+0.0 & -- & -- & 200/200 \\
+0.2 & 199/200 & 200/200 & 198/200 \\
+0.3 & 199/200 & 189/200 & 185/200 \\
+0.5 & 198/200 & 196/200 & 176/200 \\
+0.7 & 196/200 & 197/200 & 195/200 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Why the strict cohort is 59 despite 97.2\% completion.} The 72 failed
+slots are spread across 41 different models, so only $100-41=59$ models have
+all 26 required artifacts. This does \emph{not} mean that only 59 models ran.
+Per-setting paired cohorts are much larger (77--100), and bounded common
+cohorts are 97, 86, 63, and 59 for $\tau=0.2,0.3,0.5,0.7$, respectively.
+
+\textbf{Method comparison is now controlled.} For cosine, linear SVM, and RBF
+SVM, we will use the same model IDs, prompts, response files, 128-D DNA,
+decoding cells, repeat-1 training/reference split, repeat-2 held-out queries,
+candidate set, and metrics. Only the decision rule changes. Hyperparameters are
+selected using repeat 1 only; differences are paired on identical queries and
+reported with 95\% model-cluster bootstrap intervals.
+
+\textbf{Preliminary finding (exploratory 84-model cohort).} Linear SVM was best
+on average over the available cells, but temperature/top-$p$ effects were not
+monotone. At $T=0.3$, for example, all methods fell sharply at $p=1.0$ relative
+to $p=0.8$ or $0.9$. This supports a limited interaction finding, not a broad
+causal conclusion, because the final cohort and seed audit are unfinished.
+
+\clearpage
+\section*{New method and next steps}
+
+\textbf{Can the proposed distributional method be compared fairly?} Yes, but
+the claim must match the available sampling budget. At $K=1$, RBF-MMD reduces
+to a kernel point-distance check and cannot demonstrate a multi-sample
+advantage. A fair $K=2$ comparison needs two independent reference responses
+and two independent query responses for every prompt, with the same encoder,
+prompts, tokens, and samples used by the mean-cosine baseline. The kernel
+bandwidth must be calibrated on reference data only and then frozen. The
+existing two rounds support the cosine/SVM comparison but not this $K=2$
+design without additional generation.
+
+\begin{table}[h]
+\centering
+\small
+\caption{Controlled comparison and current readiness.}
+\begin{tabularx}{\linewidth}{>{\raggedright\arraybackslash}p{0.27\linewidth}
+                              >{\raggedright\arraybackslash}p{0.25\linewidth}X}
+\toprule
+Comparison & Variable changed & Status \\
+\midrule
+Cosine vs linear/RBF SVM & Decision rule only & Ready after cohort recovery and round audit \\
+Mean cosine vs RBF-MMD, $K=1$ & Distance only & Feasible as a point check; not multi-sample evidence \\
+Mean cosine vs RBF-MMD, $K=2$ & Representation/distance only & Requires additional independent responses \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\textbf{Recovery priority.} Twenty-four affected models each lack only one
+slot. Repairing any 21 of them is the minimum theoretical route from 59 to the
+preregistered strict common cohort of at least 80. We will first diagnose the
+missing-file compatibility/source issue and the empty-response issue, then run
+only the affected model--cell--round keys.
+
+\textbf{Expected completion from the 5 August snapshot:}
+\begin{itemize}
+  \item \textbf{Failure diagnosis --- 1 working day:} produce a
+        failure-specific repair list.
+  \item \textbf{Targeted recovery and audit --- 2--3 working days:} reach a
+        strict common $N\geq80$ and confirm independent rounds.
+  \item \textbf{Frozen cosine/SVM evaluation --- 1 working day:} produce paired
+        results and 95\% confidence intervals.
+  \item \textbf{Report integration --- 1 working day:} prepare the primary
+        report for supervisor review.
+  \item \textbf{Optional fair $K=2$ MMD study --- 3--5 additional working
+        days:} obtain two independent samples on both sides.
+\end{itemize}
+
+\textbf{This week's deliverables.} The short update now foregrounds the new
+progress, controlled comparison, limited findings, and completion dates. The
+full robustness report has also been refreshed with the latest grid counts,
+paired/common cohort sizes, failure accounting, controlled-comparison matrix,
+and revised execution schedule. Exploratory results remain explicitly starred
+until rerun on the recovered primary cohort.
+
+\end{document}
