@@ -122,25 +122,20 @@ def select_models(records: dict[tuple[str, str, int], RunRecord], settings: list
 
 
 def select_prompts(records: dict[tuple[str, str, int], RunRecord], selected_models: list[str], settings: list[SettingSpec], prompt_limit: int) -> list[str]:
-    prompt_sets: list[list[str]] = []
-    for setting in settings:
-        reference = None
-        for model_name in selected_models:
-            for repeat in sorted({repeat for (m, code, repeat) in records if m == model_name and code == setting.code}):
-                reference = records[(model_name, setting.code, repeat)]
-                break
-            if reference is not None:
-                break
-        if reference is None:
-            continue
-        prompt_sets.append(reference.prompts)
-
-    if not prompt_sets:
+    selected_codes = {setting.code for setting in settings}
+    selected_model_set = set(selected_models)
+    prompt_lists = [
+        record.prompts
+        for (model_name, code, _repeat), record in sorted(records.items())
+        if model_name in selected_model_set and code in selected_codes
+    ]
+    if not prompt_lists:
         return []
 
-    common = list(prompt_sets[0])
-    for prompts in prompt_sets[1:]:
-        common = [prompt for prompt in common if prompt in prompts]
+    common_set = set(prompt_lists[0])
+    for prompts in prompt_lists[1:]:
+        common_set.intersection_update(prompts)
+    common = [prompt for prompt in prompt_lists[0] if prompt in common_set]
     return common if prompt_limit <= 0 else common[:prompt_limit]
 
 

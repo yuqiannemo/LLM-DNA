@@ -4,6 +4,7 @@ __all__ = [
     "__version__",
     "DNAExtractionConfig",
     "DNAExtractionResult",
+    "RandomFourierMap",
     "calc_dna",
     "calc_dna_parallel",
     "calc_dna_batch",
@@ -15,6 +16,10 @@ __version__ = _version("llm-dna")
 
 
 def __getattr__(name: str):
+    if name == "RandomFourierMap":
+        from .distributional import RandomFourierMap
+
+        return RandomFourierMap
     if name in {
         "DNAExtractionConfig",
         "DNAExtractionResult",
