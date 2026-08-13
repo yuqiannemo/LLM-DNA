@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Primary LLM-DNA Robustness Experiment — Weekly Progress Update</title>
+<style>
+  @page { size: A4; margin: 0; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: #e5e7eb; color: #172033; }
+  body { font-family: "Noto Serif", "Liberation Serif", Georgia, serif; font-size: 9.6pt; line-height: 1.42; }
+  .page { width: 210mm; height: 297mm; margin: 0 auto 8mm; padding: 17mm 18mm 16mm; background: #fff; position: relative; overflow: hidden; page-break-after: always; }
+  .page:last-child { page-break-after: auto; }
+  h1, h2, h3, .sans, table, .stat, .tag, .footer, .eyebrow { font-family: "DejaVu Sans", Arial, sans-serif; }
+  h1 { margin: 0; color: #16375b; font-size: 24pt; line-height: 1.15; letter-spacing: -.35px; }
+  h2 { margin: 0 0 4mm; color: #204f7d; font-size: 15pt; line-height: 1.2; border-bottom: .45mm solid #8aa9c5; padding-bottom: 2mm; }
+  h3 { margin: 4mm 0 1.5mm; color: #274f74; font-size: 10.5pt; }
+  p { margin: 0 0 2.7mm; }
+  strong { color: #101828; }
+  .eyebrow { color: #54728e; font-weight: 700; font-size: 8pt; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 5mm; }
+  .subtitle { margin-top: 4mm; color: #4b647d; font-family: "DejaVu Sans", Arial, sans-serif; font-size: 11.5pt; line-height: 1.4; }
+  .date { margin-top: 8mm; color: #334155; font-family: "DejaVu Sans", Arial, sans-serif; font-size: 9.5pt; }
+  .lead { font-size: 11pt; line-height: 1.5; color: #25374b; }
+  .rule { height: .6mm; background: #244d73; margin: 10mm 0 7mm; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3mm; }
+  .stat { border: .25mm solid #c9d6e2; border-top: 1.2mm solid #2d6a96; padding: 3.2mm; min-height: 24mm; background: #f8fafc; }
+  .stat .number { color: #143b60; font-size: 17pt; font-weight: 700; line-height: 1; }
+  .stat .label { color: #526579; font-size: 7.5pt; margin-top: 2mm; line-height: 1.25; }
+  .box { border: .25mm solid #c9d6e2; padding: 4mm; background: #f8fafc; margin: 3mm 0; }
+  .box.blue { border-left: 1.4mm solid #2f6f9f; }
+  .box.amber { border-left: 1.4mm solid #d28b26; background: #fffbf2; }
+  .box.green { border-left: 1.4mm solid #3b8b6b; background: #f3faf7; }
+  .box p:last-child { margin-bottom: 0; }
+  .statusline { margin-top: 10mm; padding: 4mm 0; border-top: .25mm solid #bdcbd7; border-bottom: .25mm solid #bdcbd7; font-family: "DejaVu Sans", Arial, sans-serif; display: grid; grid-template-columns: 31mm 1fr; gap: 5mm; }
+  .statusline .label { color: #52718e; font-size: 8pt; font-weight: 700; text-transform: uppercase; letter-spacing: .7px; }
+  .statusline .value { color: #1f3448; font-size: 9pt; }
+  table { width: 100%; border-collapse: collapse; margin: 3mm 0 4mm; font-size: 8.2pt; line-height: 1.3; }
+  th { text-align: left; color: #fff; background: #315f86; padding: 2.2mm 2.4mm; font-weight: 700; }
+  td { padding: 2.1mm 2.4mm; border-bottom: .2mm solid #d7e0e7; vertical-align: top; }
+  tbody tr:nth-child(even) td { background: #f5f8fa; }
+  .compact td, .compact th { padding-top: 1.55mm; padding-bottom: 1.55mm; }
+  .delta-good { color: #177052; font-weight: 700; }
+  .delta-warn { color: #9a5b13; font-weight: 700; }
+  .figure { width: 100%; display: block; margin: 3mm auto 2mm; }
+  .caption { font-size: 8pt; color: #526579; line-height: 1.35; margin-bottom: 4mm; }
+  .caption strong { color: #30475d; }
+  .tag { display: inline-block; padding: .8mm 2mm; border-radius: 8mm; background: #e8f0f7; color: #285777; font-size: 7.4pt; font-weight: 700; margin-right: 1mm; }
+  ul, ol { margin: 1.5mm 0 3mm 5mm; padding-left: 4mm; }
+  li { margin-bottom: 1.6mm; }
+  .checklist { list-style: none; padding: 0; margin-left: 0; }
+  .checklist li { padding-left: 5mm; position: relative; }
+  .checklist li:before { content: "✓"; color: #24765b; font-family: sans-serif; font-weight: 700; position: absolute; left: 0; }
+  code { font-family: "DejaVu Sans Mono", monospace; font-size: 7.8pt; color: #183b58; overflow-wrap: anywhere; }
+  .timeline { display: grid; grid-template-columns: 23mm 1fr; border-left: .8mm solid #7da0bd; margin: 4mm 0 4mm 3mm; }
+  .timeline div { padding: 2.2mm 3mm; border-bottom: .2mm solid #dde5eb; }
+  .timeline .when { font-family: "DejaVu Sans", sans-serif; color: #2c5f86; font-weight: 700; }
+  .decision { display: grid; grid-template-columns: 27mm 1fr; gap: 4mm; padding: 3mm 0; border-bottom: .2mm solid #d7e0e7; }
+  .decision .gate { font-family: "DejaVu Sans", sans-serif; font-weight: 700; color: #2d628b; }
+  .small { font-size: 8.2pt; color: #53677b; }
+  .footer { position: absolute; left: 18mm; right: 18mm; bottom: 7mm; display: flex; justify-content: space-between; border-top: .2mm solid #cbd5df; padding-top: 2mm; color: #75869a; font-size: 7pt; }
+  .page-number { color: #385b7c; font-weight: 700; }
+  .no-break { break-inside: avoid; }
+  @media print { html, body { background: #fff; } .page { margin: 0; } }
+</style>
+</head>
+<body>
+
+<section class="page">
+  <div class="eyebrow">LLM-DNA · Primary robustness study</div>
+  <h1>Weekly Progress Update</h1>
+  <div class="subtitle">Recovery status, seed provenance, and the four-seed DistDNA validation plan</div>
+  <div class="date">Reporting period: 5–13 August 2026 · Snapshot: 13 August, 13:56 SGT</div>
+  <div class="rule"></div>
+
+  <p class="lead">This note updates the 5 August report. It records only what changed during the week, what the current data can support, and the next experiment needed to test DistDNA fairly. The full experimental protocol and previously reported formulas remain in the earlier report and are not repeated here.</p>
+
+  <div class="grid-4" style="margin-top:8mm">
+    <div class="stat"><div class="number">2,552</div><div class="label">successful artifacts<br>of 2,600 planned</div></div>
+    <div class="stat"><div class="number">+24</div><div class="label">failed slots recovered<br>since 5 August</div></div>
+    <div class="stat"><div class="number">68</div><div class="label">models complete across<br>all 26 planned runs</div></div>
+    <div class="stat"><div class="number">48</div><div class="label">slots still lacking a<br>successful artifact</div></div>
+  </div>
+
+  <h3 style="margin-top:9mm">What changed this week</h3>
+  <ul class="checklist">
+    <li>A failure-specific recovery pass was launched on the current A100 host and increased grid coverage from 97.2% to 98.2%.</li>
+    <li>The strict all-run cohort increased from 59 to 68 models. Recovery is still active, so this is a timestamped interim count.</li>
+    <li>Seed provenance was separated from artifact coverage: 1,956 successful slots still rely only on historical runs with no recorded generation seed.</li>
+    <li>The repository now contains the formal RFFTrace/DistDNA implementation, exact MMD baseline, matched-sample evaluator, compact projection, and tests.</li>
+    <li>A leakage-free four-seed pilot is specified so that DistDNA and cosine baselines consume exactly the same generated responses.</li>
+  </ul>
+
+  <div class="box blue" style="margin-top:8mm">
+    <p><strong>Recommended decision.</strong> First run a 10-model, one-setting, four-seed debugging pilot. Use it to validate the data split, implementation, and effect direction. Then start the 100-model extension at the same setting. Expand to all 12 stochastic settings only after the pilot is stable.</p>
+  </div>
+
+  <div class="statusline">
+    <div class="label">Current job</div>
+    <div class="value">Recovery was running at report build time. The active cell had moved to <strong>T=0.5, top-p=0.9, repeat 1</strong>, using generation seed <strong>42</strong>.</div>
+  </div>
+  <div class="footer"><span>Primary LLM-DNA robustness experiment · 13 August 2026</span><span class="page-number">1</span></div>
+</section>
+
+<section class="page">
+  <h2>1. Recovery progress since 5 August</h2>
+  <table>
+    <thead><tr><th>Measure</th><th>5 Aug frozen snapshot</th><th>13 Aug live snapshot</th><th>Change</th></tr></thead>
+    <tbody>
+      <tr><td>Successful artifacts</td><td>2,528 / 2,600</td><td>2,552 / 2,600</td><td class="delta-good">+24</td></tr>
+      <tr><td>Artifact coverage</td><td>97.2%</td><td>98.2%</td><td class="delta-good">+1.0 pp</td></tr>
+      <tr><td>Slots without success</td><td>72</td><td>48</td><td class="delta-good">−24</td></tr>
+      <tr><td>Strict all-26-run cohort</td><td>59 / 100</td><td>68 / 100</td><td class="delta-good">+9 models</td></tr>
+      <tr><td>Explicit-seed successes</td><td>572</td><td>596</td><td class="delta-good">+24</td></tr>
+      <tr><td>Historical unknown-seed only</td><td>1,956</td><td>1,956</td><td class="delta-warn">unchanged</td></tr>
+    </tbody>
+  </table>
+
+  <img class="figure" src="figures/primary_robustness_20260813/live_grid_seed_recovery.png" alt="Live primary grid recovery status">
+  <p class="caption"><strong>Figure 1.</strong> Live grid snapshot at 13:56 SGT on 13 August. Green recovery gains are real successful artifacts, but the seed-provenance panel shows why high coverage is not yet equivalent to a four-seed DistDNA dataset.</p>
+
+  <div class="box amber">
+    <p><strong>Interpretation.</strong> The recovery pass repairs the preregistered two-round grid. It should finish before a final primary-grid analysis is frozen. It does not, by itself, create four independent samples per model and setting.</p>
+  </div>
+
+  <h3>Settings that remain most incomplete</h3>
+  <p>The largest remaining gap is <strong>T=0.5, top-p=1.0</strong> with 176/200 successful artifacts. All other stochastic settings are between 195/200 and 200/200. Failures are distributed across models, which is why the strict common cohort remains lower than the overall coverage percentage.</p>
+  <div class="footer"><span>Weekly progress update · Recovery</span><span class="page-number">2</span></div>
+</section>
+
+<section class="page">
+  <h2>2. Seed provenance: what is reusable</h2>
+  <p>The response-generation seed and the DNA projection seed are different variables. This report concerns the response-generation seed. The projection seed remains fixed and does not create an independent response sample.</p>
+
+  <table>
+    <thead><tr><th>Artifact source</th><th>Recorded generation seed</th><th>Use in current analysis</th><th>Use in four-seed DistDNA</th></tr></thead>
+    <tbody>
+      <tr><td>Stochastic T=0.2, 0.3, 0.7 backfills</td><td>r1: 42001<br>r2: 42002</td><td>Valid</td><td class="delta-good">Reusable as independent seeds</td></tr>
+      <tr><td>T=0.5 control and recovery</td><td>r1: 42<br>r2: 42</td><td>Valid for coverage</td><td class="delta-warn">Replace for seed-clean study</td></tr>
+      <tr><td>Historical sweep</td><td>Not recorded</td><td>Valid for matched method comparisons on the same responses</td><td class="delta-warn">Replace; independence cannot be established</td></tr>
+      <tr><td>New four-seed extension</td><td>42001, 42002, 42003, 42004</td><td>Valid</td><td class="delta-good">Primary DistDNA evidence</td></tr>
+    </tbody>
+  </table>
+
+  <div class="grid-2">
+    <div class="box green">
+      <h3 style="margin-top:0">The current 98.2% grid supports</h3>
+      <ul>
+        <li>Two-round cosine, linear SVM, and RBF-SVM comparisons.</li>
+        <li>Temperature/top-p robustness analysis on a fixed matched cohort.</li>
+        <li>Exploratory representation comparisons when every method reads identical artifacts.</li>
+      </ul>
+    </div>
+    <div class="box amber">
+      <h3 style="margin-top:0">It does not yet support</h3>
+      <ul>
+        <li>A leakage-free same-setting K=2 reference and K=2 query split.</li>
+        <li>A claim that seed 42 duplicates or unknown-seed runs are independent samples.</li>
+        <li>A fair DistDNA advantage claim based only on the easier single-vector cosine baseline.</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Current seed-clean inventory</h3>
+  <p>Across the 12 stochastic settings, the live repository contains <strong>320 unique successful model–setting artifacts</strong> with explicit seed 42001 or 42002. A further 176 successful stochastic artifacts use seed 42 and are not counted as seed-clean four-seed evidence. The 100 deterministic artifacts are also excluded because repeated sampling is inactive at T=0.</p>
+
+  <div class="box blue">
+    <p><strong>Operational rule for the new queue:</strong> skip an artifact only when the same model, decoding setting, prompt set, token budget, and exact generation seed already have a successful output. Unknown-seed and seed-42 artifacts remain in the historical grid but do not satisfy a 42001–42004 slot.</p>
+  </div>
+  <div class="footer"><span>Weekly progress update · Seed provenance</span><span class="page-number">3</span></div>
+</section>
+
+<section class="page">
+  <h2>3. The immediate DistDNA pilot</h2>
+  <p class="lead">The pilot asks one narrow question: when the generated-response budget is matched, does a distributional representation identify the model more reliably than averaging ordinary DNA vectors and using cosine retrieval?</p>
+
+  <img class="figure" src="figures/primary_robustness_20260813/distdna_k2_pilot_design.png" alt="Four-seed DistDNA pilot design">
+  <p class="caption"><strong>Figure 2.</strong> Four independent response sets at one fixed decoding setting. Seeds 42001 and 42003 form the reference distribution; seeds 42002 and 42004 form the held-out query distribution. Every K=2 method reads the same four sets.</p>
+
+  <h3>Recommended first setting</h3>
+  <div class="box blue">
+    <p><strong>T=0.7, top-p=1.0.</strong> This is deliberately stochastic and therefore more likely to reveal whether distributional information helps. It also has broad explicit seed-42002 coverage in the current grid, reducing the amount of new generation needed for the later 100-model extension.</p>
+  </div>
+
+  <h3>Why four seeds are needed</h3>
+  <p>Two seeds are used to estimate the reference distribution and two different seeds estimate the query distribution. Reusing a response set on both sides would make a model artificially close to itself. Four seeds are therefore the minimum clean design for a K=2 versus K=2 same-setting comparison.</p>
+
+  <h3>What the 10-model result means</h3>
+  <p>The 10-model run is a debugging and effect-direction pilot. It can reveal implementation errors, leakage, saturation, or an obviously unhelpful representation. It is not a final statistical claim: with ten queries, one corrected model changes Top-1 by ten percentage points. If the pipeline behaves sensibly, expand to 20–30 deliberately confusable models before interpreting confidence intervals.</p>
+  <div class="footer"><span>Weekly progress update · DistDNA pilot design</span><span class="page-number">4</span></div>
+</section>
+
+<section class="page">
+  <h2>4. Proposed 10-model small-scale cohort</h2>
+  <p>All candidates below are already members of the fixed 100-model cohort and are advertised below 0.8B parameters. Selection is based on scale and family structure, not on DistDNA outcomes. The repeated Pythia and Qwen families intentionally make the retrieval task less likely to saturate.</p>
+
+  <table class="compact">
+    <thead><tr><th style="width:8%">#</th><th style="width:57%">Model</th><th style="width:14%">Scale</th><th>Role in pilot</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td><code>ibm-granite/granite-4.0-h-350m-base</code></td><td>≈0.35B</td><td>Granite baseline</td></tr>
+      <tr><td>2</td><td><code>EleutherAI/pythia-410m-seed1</code></td><td>≈0.41B</td><td rowspan="3">Confusable same-family trio</td></tr>
+      <tr><td>3</td><td><code>EleutherAI/pythia-410m-seed2</code></td><td>≈0.41B</td></tr>
+      <tr><td>4</td><td><code>EleutherAI/pythia-410m-seed3</code></td><td>≈0.41B</td></tr>
+      <tr><td>5</td><td><code>unsloth/Qwen2.5-0.5B</code></td><td>≈0.50B</td><td rowspan="3">Related Qwen variants</td></tr>
+      <tr><td>6</td><td><code>unsloth/Qwen2.5-0.5B-Instruct</code></td><td>≈0.50B</td></tr>
+      <tr><td>7</td><td><code>Ihor/Text2Graph-R1-Qwen2.5-0.5b</code></td><td>≈0.50B</td></tr>
+      <tr><td>8</td><td><code>robowaifudev/megatron-gpt2-345m</code></td><td>≈0.35B</td><td>GPT-2 architecture</td></tr>
+      <tr><td>9</td><td><code>state-spaces/mamba-370m-hf</code></td><td>≈0.37B</td><td>State-space architecture</td></tr>
+      <tr><td>10</td><td><code>unsloth/Qwen3-0.6B-Base</code></td><td>≈0.60B</td><td>Newer Qwen family</td></tr>
+    </tbody>
+  </table>
+
+  <div class="box amber">
+    <p><strong>Pre-launch check.</strong> Parameter labels above are model-name/model-card scale labels. The runner should still validate configuration compatibility, non-empty generation, tokenizer access, and cached model availability before the four-seed queue starts.</p>
+  </div>
+
+  <h3>Frozen generation contract</h3>
+  <table class="compact">
+    <tbody>
+      <tr><td style="width:30%"><strong>Decoding setting</strong></td><td>T=0.7, top-p=1.0, sampling enabled</td></tr>
+      <tr><td><strong>Seeds</strong></td><td>42001, 42002, 42003, 42004</td></tr>
+      <tr><td><strong>Prompts</strong></td><td>The same 100 classical-Chinese prompts already used by the primary grid</td></tr>
+      <tr><td><strong>Response budget</strong></td><td>The same maximum generated-token limit as the primary grid</td></tr>
+      <tr><td><strong>Representation</strong></td><td>The same response encoder and projection configuration for every method</td></tr>
+      <tr><td><strong>Output policy</strong></td><td>Never overwrite historical artifacts; write to a seed-explicit extension directory</td></tr>
+    </tbody>
+  </table>
+  <div class="footer"><span>Weekly progress update · Pilot cohort</span><span class="page-number">5</span></div>
+</section>
+
+<section class="page">
+  <h2>5. Fair comparison and expected pilot time</h2>
+  <h3>Methods evaluated on identical responses</h3>
+  <table>
+    <thead><tr><th>Method</th><th>Sample budget</th><th>Purpose</th><th>Interpretation</th></tr></thead>
+    <tbody>
+      <tr><td>Single-response cosine</td><td>K=1 vs K=1</td><td>Original low-budget diagnostic</td><td>Useful, but not the fairness gate</td></tr>
+      <tr><td>Mean-DNA cosine</td><td>K=2 vs K=2</td><td>Strong matched-budget baseline</td><td><strong>Primary comparator</strong></td></tr>
+      <tr><td>Exact RBF-MMD</td><td>K=2 vs K=2</td><td>Exact distribution distance</td><td>Accuracy reference for approximation</td></tr>
+      <tr><td>RFFTrace</td><td>K=2 vs K=2</td><td>Scalable distributional vector</td><td>Primary DistDNA result</td></tr>
+      <tr><td>Compact DistDNA</td><td>K=2 vs K=2</td><td>Projected representation</td><td>Accuracy–storage trade-off</td></tr>
+    </tbody>
+  </table>
+
+  <p>The decision rule is simple: for each held-out query distribution, rank the ten reference models by distance and check whether the true model is ranked first. Report Top-1, MRR, Top-3, runtime, and storage. The meaningful improvement is <strong>DistDNA minus mean-DNA cosine</strong> on the same query models.</p>
+
+  <h3>Time from an available four-GPU A100 allocation</h3>
+  <div class="timeline">
+    <div class="when">0–0.5 h</div><div>Audit reusable seed-explicit artifacts, freeze the ten-model manifest, and dry-run the queue.</div>
+    <div class="when">0.5–3.5 h</div><div>Generate the missing seed-specific responses. Historical small-model observations have a 2.4-minute median per artifact, with a long retry tail; 1–3 hours is the realistic wall-clock range on four GPUs.</div>
+    <div class="when">3.5–4.5 h</div><div>Build embeddings and run cosine, exact MMD, RFFTrace, and compact DistDNA on the identical split.</div>
+    <div class="when">4.5–8 h</div><div>Inspect nearest-neighbour errors, verify no leakage, adjust implementation if necessary, rerun evaluation, and produce the first result table.</div>
+  </div>
+
+  <div class="grid-2">
+    <div class="stat"><div class="number">1–3 h</div><div class="label">expected generation time<br>for the 10-model pilot</div></div>
+    <div class="stat"><div class="number">4–8 h</div><div class="label">expected time to a checked<br>first DistDNA comparison</div></div>
+  </div>
+
+  <div class="box green" style="margin-top:5mm">
+    <p><strong>Practical advantage.</strong> Changes to RFF dimension, bandwidth, projection, or the DistDNA vector do not require regenerating model responses. Once the four raw response sets are stored correctly, representation development can iterate quickly.</p>
+  </div>
+  <div class="footer"><span>Weekly progress update · Comparison and timing</span><span class="page-number">6</span></div>
+</section>
+
+<section class="page">
+  <h2>6. Scaling from 10 models to the full cohort</h2>
+  <p>“Four seeds for 100 models” has two materially different interpretations. The operational plan should name the scope explicitly.</p>
+
+  <table>
+    <thead><tr><th>Scope</th><th>Target artifacts</th><th>Reusable now</th><th>Still required</th><th>Expected wall time</th></tr></thead>
+    <tbody>
+      <tr><td><strong>One setting</strong><br>T=0.7, top-p=1.0</td><td>100 × 4 = 400</td><td>≈103 explicit 42001/42002 artifacts</td><td>≈297</td><td>4 A100s: 2–4 days<br>8 A100s: 1.5–3 days</td></tr>
+      <tr><td><strong>All 12 stochastic settings</strong></td><td>100 × 12 × 4 = 4,800</td><td>320 explicit 42001/42002 artifacts</td><td>4,480</td><td>4 A100s: 4–6 weeks<br>8 A100s: 2–3 weeks</td></tr>
+    </tbody>
+  </table>
+
+  <p class="small">Theoretical compute for the all-setting extension is about 2,335 A100 GPU-hours, estimated from the 2,552 successful primary artifacts (31.3 GPU-minutes per artifact on average). Wall-clock ranges add allowance for retries, timeouts, incompatible models, scheduling gaps, and audit passes.</p>
+
+  <h3>Recommended staged execution</h3>
+  <div class="decision"><div class="gate">Stage A</div><div>Let the current 72-slot recovery pass finish and freeze its final status. This preserves a clean endpoint for the original two-round primary grid.</div></div>
+  <div class="decision"><div class="gate">Stage B</div><div>Run the 10-model four-seed pilot at T=0.7, top-p=1.0. Obtain a checked DistDNA versus matched mean-cosine result within one working day.</div></div>
+  <div class="decision"><div class="gate">Stage C</div><div>Start the 100-model extension at the same setting. Skip only successful artifacts with the exact required seed; regenerate unknown-seed and seed-42 slots.</div></div>
+  <div class="decision"><div class="gate">Stage D</div><div>While Stage C runs, iterate on DistDNA using already generated raw responses. No new generation is needed for representation-only changes.</div></div>
+  <div class="decision"><div class="gate">Stage E</div><div>Expand to all settings only if the pipeline passes leakage checks and DistDNA shows a useful effect or a clearly motivated diagnostic value.</div></div>
+
+  <div class="box amber" style="margin-top:6mm">
+    <p><strong>Why not immediately queue all 4,480 missing artifacts?</strong> It is safe to generate raw responses while representation code changes, but the full queue commits several weeks of A100 time. A same-day pilot can first catch split errors, saturated retrieval, an unsuitable bandwidth, or a DistDNA construction that needs revision.</p>
+  </div>
+
+  <h3>Seed replacement policy</h3>
+  <p>Existing unknown-seed and seed-42 artifacts are retained for provenance and the original analysis. They are not deleted or overwritten. The four-seed extension writes new, seed-explicit artifacts alongside them and the audit chooses the correct artifact by exact seed.</p>
+  <div class="footer"><span>Weekly progress update · Scale-out plan</span><span class="page-number">7</span></div>
+</section>
+
+<section class="page">
+  <h2>7. Implementation status and next deliverables</h2>
+  <table>
+    <thead><tr><th>Status</th><th>Component</th><th>Repository location</th></tr></thead>
+    <tbody>
+      <tr><td class="delta-good">Implemented</td><td>Exact MMD, shared RFF map, RFFTrace, compact projection</td><td><code>src/llm_dna/distributional.py</code></td></tr>
+      <tr><td class="delta-good">Implemented</td><td>Matched-sample retrieval evaluator and export</td><td><code>scripts/run_rfftrace_experiment.py</code></td></tr>
+      <tr><td class="delta-good">Implemented</td><td>Optional DistDNA multiclass SVM evaluation</td><td><code>scripts/evaluate_rfftrace_svm.py</code></td></tr>
+      <tr><td class="delta-good">Verified</td><td>Distributional and evaluator unit tests</td><td><code>tests/test_distributional.py</code><br><code>tests/test_rfftrace_experiment.py</code></td></tr>
+      <tr><td class="delta-warn">Next</td><td>Seed-exact audit and four-seed generation queue</td><td>New pilot manifest and resumable runner</td></tr>
+      <tr><td class="delta-warn">Next</td><td>Pilot result table, paired errors, and saturation diagnostic</td><td>Generated after the four-seed pilot</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Acceptance checks before interpreting accuracy</h3>
+  <ol>
+    <li><strong>Exact split:</strong> no response artifact appears in both reference and query distributions.</li>
+    <li><strong>Matched budget:</strong> DistDNA and mean-DNA cosine use the same four response sets.</li>
+    <li><strong>Shared map:</strong> every model uses the same response encoder, RFF parameters, and optional projection.</li>
+    <li><strong>No outcome-based cohort changes:</strong> the ten models are frozen before DistDNA accuracy is inspected.</li>
+    <li><strong>Failure transparency:</strong> failed/empty responses are reported and never silently replaced by a different model.</li>
+    <li><strong>Saturation check:</strong> if all methods score 100%, move to a larger or more confusable cohort rather than claiming equivalence or improvement.</li>
+  </ol>
+
+  <div class="box blue" style="margin-top:7mm">
+    <h3 style="margin-top:0">Deliverable sequence</h3>
+    <p><span class="tag">1</span> Final recovery audit &nbsp; <span class="tag">2</span> 10-model seed manifest &nbsp; <span class="tag">3</span> Four-seed generation &nbsp; <span class="tag">4</span> Matched comparison &nbsp; <span class="tag">5</span> Error analysis &nbsp; <span class="tag">6</span> 100-model scale-out</p>
+  </div>
+
+  <h3>Bottom line</h3>
+  <p class="lead">A first technically meaningful DistDNA comparison is a same-day task once GPUs are available. A full 100-model, one-setting four-seed dataset is a multi-day task. A four-seed replacement across the entire 12-setting grid is a separate multi-week compute commitment and should follow, not precede, the pilot gate.</p>
+
+  <div class="box" style="margin-top:8mm">
+    <p class="small"><strong>Provenance.</strong> Counts in this note were generated from the live repository on 13 August 2026 at 13:56 SGT. Recovery was still running. Final figures must be regenerated after that process exits. The 5 August report and PDF remain unchanged.</p>
+  </div>
+  <div class="footer"><span>Primary LLM-DNA robustness experiment · End of update</span><span class="page-number">8</span></div>
+</section>
+
+</body>
+</html>

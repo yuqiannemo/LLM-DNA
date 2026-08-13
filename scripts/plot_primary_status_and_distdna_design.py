@@ -222,7 +222,7 @@ def draw_pilot_design(output: Path) -> None:
     image = Image.new("RGB", (1800, 1000), "white")
     draw = ImageDraw.Draw(image)
     draw.text((70, 40), "Same-setting K=2 DistDNA pilot: leakage-free, matched-budget comparison", font=font(39, True), fill="#0f172a")
-    draw.text((70, 92), "Preselect a difficult 20–30 model cohort; use identical prompts, setting, encoder, and token budget.", font=font(23), fill="#475569")
+    draw.text((70, 92), "Start with a 10-model debugging pilot; expand to 20–30 models for evidence after the pipeline is stable.", font=font(23), fill="#475569")
 
     rounded_panel(draw, (55, 155, 855, 565))
     draw.text((90, 185), "A. Four independent response sets", font=font(29, True), fill="#0f172a")
