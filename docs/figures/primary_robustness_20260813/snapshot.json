@@ -1,0 +1,24 @@
+{
+  "generated_at": "2026-08-13T13:31:28+08:00",
+  "successful": 2552,
+  "remaining": 48,
+  "recovered_since_august_5": 24,
+  "strict_common_models": 68,
+  "explicit_seed_successes": 596,
+  "unknown_seed_only_successes": 1956,
+  "per_setting_successes": {
+    "0:1": 200,
+    "0.2:0.8": 199,
+    "0.2:0.9": 200,
+    "0.2:1": 199,
+    "0.3:0.8": 199,
+    "0.3:0.9": 198,
+    "0.3:1": 199,
+    "0.5:0.8": 198,
+    "0.5:0.9": 196,
+    "0.5:1": 176,
+    "0.7:0.8": 196,
+    "0.7:0.9": 197,
+    "0.7:1": 195
+  }
+}

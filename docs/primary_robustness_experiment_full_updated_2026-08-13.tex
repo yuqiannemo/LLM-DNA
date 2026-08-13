@@ -52,8 +52,10 @@ from historical manifests that do not record a separate generation seed.
 Thus, 97.2\% is an artifact-coverage statistic, not a seed-clean completion
 rate. The 72 unsuccessful slots affect 41 distinct models, leaving a strict
 all-grid common cohort of 59 in that snapshot. Targeted recovery was launched
-on August 13. Small-scale exploratory results are reported separately and are
-not substitutes for the final primary analysis.
+on August 13. By the live 13:31 Singapore-time snapshot, recovery had raised
+coverage to 2,552/2,600 and the strict common cohort to 68. Small-scale
+exploratory results are reported separately and are not substitutes for the
+final primary analysis.
 \par
 
 \section{Status and scope}
@@ -75,23 +77,30 @@ to 100 models and two rounds. Repeat 1 is the reference/training split and
 repeat 2 is held out. Exact identification is a 100-way closed-set task before
 failure filtering.
 
-\begin{table}[htbp]
+The frozen August 5 combined-round counts were 200/200 at the deterministic
+control; 199, 200, and 198 at $T=0.2$; 199, 189, and 185 at $T=0.3$; 198, 196,
+and 176 at $T=0.5$; and 196, 197, and 195 at $T=0.7$, with stochastic entries
+ordered by $p=0.8,0.9,1.0$.
+
+The live recovery snapshot below is deliberately separate from the frozen
+August 5 table. At 13:31 Singapore time on August 13, 24 of the 72 failed slots
+had been repaired, giving 2,552/2,600 successes (98.2\%), 48 slots still
+without a successful artifact, and a strict all-26-run common cohort of 68.
+Among the current successes, 596 have at least one explicitly recorded
+generation seed and 1,956 rely only on historical unknown-seed artifacts.
+
+\begin{figure}[htbp]
 \centering
-\caption{Frozen pre-recovery primary-grid snapshot from August 5. Each cell
-combines two 100-model rounds.}
-\label{tab:live-grid}
-\begin{tabular}{crrr}
-\toprule
-Temperature & $p=0.8$ & $p=0.9$ & $p=1.0$ \\
-\midrule
-$0$   & -- & -- & $200/200$ \\
-$0.2$ & $199/200$ & $200/200$ & $198/200$ \\
-$0.3$ & $199/200$ & $189/200$ & $185/200$ \\
-$0.5$ & $198/200$ & $196/200$ & $176/200$ \\
-$0.7$ & $196/200$ & $197/200$ & $195/200$ \\
-\bottomrule
-\end{tabular}
-\end{table}
+\includegraphics[width=\linewidth]
+  {docs/figures/primary_robustness_20260813/live_grid_seed_recovery.png}
+\caption{Live primary-grid snapshot generated at 13:31 Singapore time on
+August 13. Panel A shows successful artifacts out of 200 per setting, Panel B
+separates the August 5 baseline from recovery gains and reports the strict
+complete-case cohort, and Panel C distinguishes artifact coverage from
+explicit generation-seed provenance. Recovery was still running, so this is a
+timestamped snapshot rather than a final result.}
+\label{fig:live-recovery-aug13}
+\end{figure}
 
 The high slot-completion rate and the smaller complete-case cohort are not
 contradictory. Failures occur in different models across cells: 72 failed slots
@@ -104,30 +113,17 @@ independent seeded evidence for causal decoding claims.
 For setting-specific paired evaluation, the usable r1--r2 cohorts remain much
 larger:
 
-\begin{table}[htbp]
-\centering
-\small
-\caption{Paired cohort with both rounds successful in each setting.}
-\label{tab:paired-cohorts}
-\begin{tabular}{crrcrrr}
-\toprule
-$T$ & $p$ & Paired $N$ && $T$ & $p$ & Paired $N$ \\
-\midrule
-0.0 & 1.0 & 100 && 0.3 & 0.9 & 93 \\
-0.2 & 0.8 & 99  && 0.3 & 1.0 & 89 \\
-0.2 & 0.9 & 100 && 0.5 & 0.8 & 98 \\
-0.2 & 1.0 & 98  && 0.5 & 0.9 & 97 \\
-0.3 & 0.8 & 99  && 0.5 & 1.0 & 77 \\
-0.7 & 0.8 & 96  && 0.7 & 0.9 & 97 \\
-0.7 & 1.0 & 95  &&     &     &    \\
-\bottomrule
-\end{tabular}
-\end{table}
+At the August 13 13:31 snapshot, the paired r1--r2 cohort sizes were 100 at
+the deterministic control; 99, 100, and 99 at $T=0.2$; 99, 98, and 99 at
+$T=0.3$; 98, 97, and 77 at $T=0.5$; and 96, 97, and 95 at $T=0.7$, again
+ordered by $p=0.8,0.9,1.0$ for stochastic decoding.
 
-The common cohorts for bounded analyses are 97 at $\tau=0.2$, 86 at
-$\tau=0.3$, 63 at $\tau=0.5$, and 59 at $\tau=0.7$. Targeted recovery should
-first repair 21 models that each lack only one slot; if successful, this is the
-minimum route to restore an 80-model all-grid cohort.
+\clearpage
+
+The live common cohorts for bounded analyses are 98 at $\tau=0.2$, 97 at
+$\tau=0.3$, 73 at $\tau=0.5$, and 68 at $\tau=0.7$. Recovery continues to
+target the remaining failure-specific slots; the final cohort audit must be
+rerun after the recovery process exits.
 
 This experiment replaces the 77-model interim analysis as the primary
 robustness study. The earlier analysis remains a legacy diagnostic because it
@@ -475,7 +471,7 @@ Consequently,
 \[
  \lVert\widehat{v}_{a}-\widehat{v}_{b}\rVert_2^2
  \approx \frac{1}{t}\sum_{q=1}^{t}
- \widehat{\mathrm{MMD}}_{\sigma}^{,2}
+ \widehat{\mathrm{MMD}}_{\sigma}^{2}
  (\{z_{a,q,r}\}_{r=1}^{K},\{z_{b,q,r}\}_{r=1}^{K}),
 \]
 where exact MMD uses the biased/V-statistic estimator, including diagonal
@@ -508,14 +504,50 @@ mean cosine versus exact MMD, RFFTrace, and compact DistDNA. Exact MMD versus
 RFFTrace isolates RFF approximation error, while RFFTrace versus compact
 DistDNA isolates projection loss.
 
-With the present two-round grid, only a disjoint $K=1$ reference/query
-comparison is immediately possible. At $K=1$, exact RBF-MMD is a kernel
-point-distance check and cannot demonstrate a multi-sample distributional
-advantage. A valid $K=2$ experiment needs four independent response sets per
-prompt---for example, reference rounds 1 and 3 and query rounds 2 and 4---with
-recorded, distinct generation seeds. The same-setting evaluation measures
-repeat stability; cross-setting evaluation freezes the reference setting and
-varies the query setting to measure decoding robustness.
+With the present two-round grid, a same-setting disjoint comparison is limited
+to $K=1$: repeat 1 is the reference and repeat 2 is the query. At $K=1$, exact
+RBF-MMD is a kernel point-distance check and cannot demonstrate a multi-sample
+distributional advantage. A same-setting $K=2$ experiment needs four
+independent response sets per prompt---for example, reference rounds 1 and 3
+and query rounds 2 and 4---with recorded, distinct generation seeds. Reusing
+rounds 1 and 2 on both sides would leak the query into the gallery and drive
+the correct model's self-distance artificially toward zero.
+
+There is one useful exception: a cross-setting $K=2$ pilot can use rounds 1
+and 2 from setting $s_a$ as the reference distribution and rounds 1 and 2
+from a different setting $s_b$ as the query distribution. The four artifacts
+are then distinct even though only two repeat labels exist per setting. This
+directly probes decoding-setting robustness, but the current historical grid
+does not provide four explicitly recorded generation seeds for any large
+setting pair, so such a result remains exploratory. The stronger same-setting
+pilot will preselect a difficult 20--30-model cohort without looking at
+DistDNA outcomes and generate rounds 1--4 with seeds 42001--42004.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth]
+  {docs/figures/primary_robustness_20260813/distdna_k2_pilot_design.png}
+\caption{Leakage-free same-setting $K=2$ DistDNA pilot and method-comparison
+gate. Rounds 1 and 3 form the reference distribution; rounds 2 and 4 form the
+held-out query distribution. All $K=2$ methods consume the same four response
+sets. Single-response cosine is a lower-budget diagnostic, whereas mean-DNA
+cosine is the primary matched-budget baseline.}
+\label{fig:distdna-k2-pilot-design}
+\end{figure}
+
+For the original-DNA matched baseline, let $d_{m,r}$ denote the ordinary DNA
+vector from round $r$. The reference and query vectors are
+\[
+ \bar d_m^{\mathrm{ref}}=\tfrac12(d_{m,1}+d_{m,3}),\qquad
+ \bar d_m^{\mathrm{qry}}=\tfrac12(d_{m,2}+d_{m,4}),
+\]
+and models are ranked by cosine similarity. Exact MMD, RFFTrace, and compact
+DistDNA use the identical response sets and prompts. Top-1 exact-model
+retrieval is primary; MRR, Top-3/5, time, and storage are secondary. The key
+paired contrast is DistDNA minus mean-DNA cosine per query model, summarized
+with a model-cluster bootstrap 95\% interval. Improvement is supported only if
+the lower endpoint is above zero; beating the cheaper $K=1$ cosine alone is
+not sufficient.
 
 The proposed method will be declared better than the strongest matched-budget
 baseline only if the paired Top-1 improvement has a model-cluster bootstrap
@@ -738,9 +770,10 @@ support a general monotone temperature effect independent of top-$p$.
 \centering
 \includegraphics[width=\linewidth]
   {docs/figures/small_scale_section_6_11/exact_top1_heatmaps.png}
-\caption{Exploratory exact-model Top-1 by method and decoding cell. Darker
-cells indicate higher accuracy. The equal-cell means correspond to the
-$\tau=0.3$ pooled-training experiment.}
+\caption{Frozen July 23 exploratory exact-model Top-1 by method and decoding
+cell. Darker cells indicate higher accuracy. The equal-cell means correspond
+to the $\tau=0.3$ pooled-training experiment; this is not the live primary
+grid result.}
 \label{fig:demo-exact-heatmaps}
 \end{figure}
 
@@ -784,10 +817,11 @@ cohort and training budget differ from the pooled condition.
 \centering
 \includegraphics[width=\linewidth]
   {docs/figures/small_scale_section_6_11/bounded_paired_gallery.png}
-\caption{Bounded-deployment and sensitivity summary. Panel A shows equal-cell
-mixed accuracy with model-cluster 95\% intervals and the worst observed cell.
-Panel B shows paired Top-1 differences relative to cosine. Panel C is an
-explicitly unpaired fixed-gallery versus pooled-gallery diagnostic.}
+\caption{Frozen July 23 bounded-deployment and sensitivity summary. Panel A
+shows equal-cell mixed accuracy with model-cluster 95\% intervals and the worst
+observed cell. Panel B shows paired Top-1 differences relative to cosine.
+Panel C is an explicitly unpaired fixed-gallery versus pooled-gallery
+diagnostic; none of these panels is a live primary-grid result.}
 \label{fig:demo-bounded-paired}
 \end{figure}
 
@@ -874,10 +908,10 @@ such pair occurred in the common cohort.
 \centering
 \includegraphics[width=\linewidth]
   {docs/figures/small_scale_section_6_11/verification_tree_diagnostics.png}
-\caption{Verification and tree-aware diagnostics. Panels A--B show binary
-metrics and false positives per query at natural prevalence. Panel C compares
-mean cosine distance for exact and disconnected pairs and annotates exact
-retrieval accuracy.}
+\caption{Frozen July 23 verification and tree-aware diagnostics. Panels A--B
+show binary metrics and false positives per query at natural prevalence.
+Panel C compares mean cosine distance for exact and disconnected pairs and
+annotates exact retrieval accuracy; this is not a live primary-grid result.}
 \label{fig:demo-verification-tree}
 \end{figure}
 
@@ -926,20 +960,24 @@ Before a final primary claim is made, the study still requires recovery to at
 least the preregistered 80-model strict common cohort, a duplicate/independence
 audit of the two existing rounds, and the frozen paired evaluation on repeat 2.
 The current two-round design supports the exact-model cosine/SVM comparison.
-It does not yet support a multi-sample advantage claim: a fair $K=2$ test needs
-two independent reference responses and two independent query responses per
-prompt, while $K=4$ and $K=8$ require additional generation. The small-scale
+It also supports exploratory cross-setting $K=2$ comparisons because each of
+two distinct settings contributes two different artifacts. It does not support
+a leakage-free same-setting multi-sample advantage claim: that test needs two
+independent reference responses and two independent query responses per
+prompt, while $K=4$ and $K=8$ require still more generation. The small-scale
 numbers remain exploratory until rerun on the frozen primary cohort.
 
-Machine-readable outputs are stored under
+Machine-readable outputs for the July demonstration are stored under
 \path{out/small_scale_section_6_11}. The exact-classification, verification,
 distributional, fixed-gallery, and tree-aware subdirectories contain the
 selected cohorts, per-query predictions where applicable, aggregate CSV files,
-and JSON summaries. The three report figures are regenerated without plotting
-library dependencies using:
+and JSON summaries. Those three result figures are frozen July 23 artifacts;
+they have not been relabelled as current primary results. The new live-status
+and DistDNA-design figures are regenerated without plotting-library
+dependencies using:
 
 \begin{lstlisting}[language=bash]
-python scripts/plot_small_scale_section_6_11_demo.py
+venv/bin/python scripts/plot_primary_status_and_distdna_design.py
 \end{lstlisting}
 
 \clearpage
@@ -954,7 +992,12 @@ on August 5 with 72 terminal failures. A failure-specific pass using
 \path{scripts/recover_primary_robustness_failures_3090.sh} was launched on the
 current A100 host on August 13 using GPUs 2--5. It writes to
 \path{out/primary_robustness_recovery_20260810} and preserves the original
-artifacts. The frozen counts in this report must be refreshed after it exits.
+artifacts. Its validated generation-seed rule is seed 42 for both $T=0.5$
+rounds, and otherwise seed 42001 for repeat 1 and 42002 for repeat 2. Thus the
+cell active at the 13:31 snapshot, $T=0.5,p=0.8$, repeat 2, uses seed 42. The August 5
+tables remain frozen provenance; Figure~\ref{fig:live-recovery-aug13} is the
+later live snapshot, and all final counts must be refreshed after recovery
+exits.
 
 Twenty-four affected models lack only one slot. Restoring any 21 of these
 models across their missing cells is the minimum theoretical route from 59 to
@@ -1060,9 +1103,10 @@ Total & 2,600 & 2,528 & 72 \\
 \end{tabular}
 \end{table}
 
-The strict common cohort across all 26 runs is 59. Setting-specific paired
-cohorts are reported in Table~\ref{tab:paired-cohorts}; therefore 97.2\% slot
-completion must not be described as a 97-model complete-case cohort.
+The strict common cohort across all 26 runs was 59 in this frozen snapshot.
+Setting-specific paired cohorts are reported in the earlier status discussion;
+therefore 97.2\% slot completion must not be described as a 97-model
+complete-case cohort.
 
 \subsection{Per-setting exact classification}
 
@@ -1250,6 +1294,9 @@ File & Purpose \\
 \path{scripts/evaluate_rfftrace_svm.py}
   & Evaluate exported RFFTrace or compact-DistDNA vectors with held-out linear
     and RBF SVMs while enforcing disjoint vector keys. \\
+\path{scripts/plot_primary_status_and_distdna_design.py}
+  & Regenerate the timestamped live grid/seed snapshot and leakage-free
+    same-setting $K=2$ DistDNA pilot design figures. \\
 \path{tests/test_distributional.py}
   & Check kernel geometry, MMD/RFF convergence, scaling, projection, seeds, and
     package exports. \\
